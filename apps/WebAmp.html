@@ -51,16 +51,16 @@
         input[type=range] { -webkit-appearance: none; width: 100%; background: #111; height: 8px; border-radius: 4px; border: 1px solid #444; outline: none; margin-bottom: 10px;}
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 18px; width: 12px; border-radius: 3px; background: #cc3300; cursor: pointer; border: 1px solid #ff5500; }
         
-        .control-panel { display: flex; align-items: center; justify-content: space-between; background: #080a0c; padding: 8px; border-radius: 5px; border: 1px solid #222; margin-bottom: 10px; flex-wrap: nowrap; gap: 8px; }
-        .playback-controls { display: flex; gap: 5px; }
-        .mode-controls { display: flex; gap: 5px; flex-grow: 1; justify-content: flex-start; margin-left: 5px;}
-        .right-btns { display: flex; gap: 5px; }
+        .control-panel { display: flex; align-items: center; justify-content: center; background: #080a0c; padding: 8px; border-radius: 5px; border: 1px solid #222; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
+        .playback-controls { display: flex; gap: 5px; justify-content: center; }
+        .mode-controls { display: flex; gap: 5px; flex-grow: 1; justify-content: center; flex-wrap: wrap; }
+        .right-btns { display: flex; gap: 5px; justify-content: center; flex-wrap: wrap; }
 
-        .btn-ctrl { background: #111; border: 2px solid #333; color: #00ff66; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; transition: 0.1s; font-weight:bold;}
+        .btn-ctrl { background: #111; border: 2px solid #333; color: #00ff66; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 13px; transition: 0.1s; font-weight:bold;}
         .btn-ctrl:hover { border-color: #00ff66; background: #002211;}
         .btn-ctrl:active { transform: translateY(2px); }
         .btn-ctrl.active-toggle { background: #004411; border-color: #00ff66; color: #fff; box-shadow: inset 0 0 8px #00ff66;}
-        .text-btn { font-size: 10px; padding: 8px 6px; width: 60px; letter-spacing: 0px; display: flex; align-items: center; justify-content: center;}
+        .text-btn { font-size: 10px; padding: 5px 6px; width: auto; min-width: 45px; letter-spacing: 0px; display: flex; align-items: center; justify-content: center;}
 
         @keyframes timerPulse {
             0% { box-shadow: inset 0 0 8px #ff00aa, 0 0 5px rgba(255,0,170,0.5); }
@@ -332,7 +332,7 @@
                 btnRepeatOne: "ОДИН",
                 btnRepeatOff: "ПОВТ",
                 btnEqBtn: "ЭКВ",
-                btnTimer: "СОН",
+                btnTimer: "НАСТ",
                 btnClear: "ОЧИСТ",
                 btnEject: "ПАПКА",
                 playlistEmpty: "Нажмите \"ПАПКА\" для загрузки музыки",
@@ -348,7 +348,7 @@
                 volLabel: "ГРОМКОСТЬ",
                 notifTitle: "Таймер сна",
                 notifBody: "Музыка на паузе. Встряхните телефон!",
-                sleepDesc: `<strong>ЗАЩИТА ОТ ЗАСЫПАНИЯ:</strong> Пока таймер работает, кнопка "СОН" пульсирует. <br>
+                sleepDesc: `<strong>ЗАЩИТА ОТ ЗАСЫПАНИЯ:</strong> Пока таймер работает, кнопка "НАСТ" пульсирует. <br>
                     По истечении времени плеер <strong>встанет на паузу</strong>. <br>
                     Далее запустится <strong>ожидание встряски (1 минута)</strong>, не давая телефону уснуть. <br>
                     Если за эту минуту вы <strong>встряхнете телефон или тапните по таймеру</strong> — плеер снимется с паузы, а отсчет начнется заново. <br>
@@ -396,7 +396,7 @@
                 btnRepeatOne: "ONE",
                 btnRepeatOff: "RPT",
                 btnEqBtn: "EQ",
-                btnTimer: "SLEEP",
+                btnTimer: "SET",
                 btnClear: "CLEAR",
                 btnEject: "FOLDER",
                 playlistEmpty: "Press \"FOLDER\" to load music",
@@ -412,7 +412,7 @@
                 volLabel: "VOLUME",
                 notifTitle: "Sleep Timer",
                 notifBody: "Music paused. Shake the phone!",
-                sleepDesc: `<strong>DEAD MAN'S SWITCH:</strong> While timer runs, "SLEEP" button pulses. <br>
+                sleepDesc: `<strong>DEAD MAN'S SWITCH:</strong> While timer runs, "SET" button pulses. <br>
                     When time expires, player <strong>will pause</strong>. <br>
                     Then a <strong>1-minute grace period</strong> starts, keeping phone awake. <br>
                     If you <strong>shake the phone or tap timer</strong> — it unpauses and resets the timer. <br>
@@ -460,7 +460,7 @@
                 btnRepeatOne: "TEK",
                 btnRepeatOff: "TKR",
                 btnEqBtn: "EKV",
-                btnTimer: "UYKU",
+                btnTimer: "AYAR",
                 btnClear: "TEMİZ",
                 btnEject: "KLASÖR",
                 playlistEmpty: "Müzik yüklemek için \"KLASÖR\"e basın",
@@ -476,7 +476,7 @@
                 volLabel: "SES",
                 notifTitle: "Uyku Zamanlayıcısı",
                 notifBody: "Müzik duraklatıldı. Telefonu sallayın!",
-                sleepDesc: `<strong>UYKU KORUMASI:</strong> Zamanlayıcı çalışırken "UYKU" düğmesi yanıp söner. <br>
+                sleepDesc: `<strong>UYKU KORUMASI:</strong> Zamanlayıcı çalışırken "AYAR" düğmesi yanıp söner. <br>
                     Süre bittiğinde oynatıcı <strong>duraklatılır</strong>. <br>
                     Ardından telefonu uyanık tutan <strong>1 dakikalık bekleme süresi</strong> başlar. <br>
                     Eğer <strong>telefonu sallar veya sayaca dokunursanız</strong> çalışmaya devam eder. <br>
