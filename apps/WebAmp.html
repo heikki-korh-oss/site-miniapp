@@ -381,12 +381,18 @@
         }
 
         let lastArtistText = "";
-        function updateMediaSessionTimer() {
+        function updateMediaSessionTimer(customTimerText) {
             if ('mediaSession' in navigator && playlist.length > 0 && currentIndex >= 0) {
                 let artistText = "WebAmp PRO Player";
-                if (isGracePeriod) artistText = "ОЖИДАНИЕ ВСТРЯСКИ...";
-                else if (sleepTimerDuration > 0 && !isTimerExpired) artistText = "Таймер сна: " + UI.timerVal.textContent;
-                else if (isTimerExpired) artistText = "ПАУЗА (Таймер истек)";
+                if (isGracePeriod) {
+                    let graceRemaining = Math.max(0, gracePeriodEnd - Date.now());
+                    artistText = "ОЖИДАНИЕ ВСТРЯСКИ (" + formatTimerDisplay(graceRemaining) + ")";
+                } else if (sleepTimerDuration > 0 && !isTimerExpired) {
+                    let rem = Math.max(0, sleepTimerEnd - Date.now());
+                    artistText = customTimerText || ("Таймер сна: " + formatTimerDisplay(rem));
+                } else if (isTimerExpired) {
+                    artistText = "ПАУЗА (Таймер истек)";
+                }
                 
                 if (artistText !== lastArtistText || navigator.mediaSession.metadata?.title !== playlist[currentIndex].name) {
                     lastArtistText = artistText;
@@ -415,7 +421,6 @@
                         gracePeriodEnd = now + 60000; // Ровно 1 минута
                         
                         if(isPlaying) audioEl.pause(); 
-                        // Включаем тишину, чтобы браузер не уснул
                         silentAudioEl.play().catch(e => console.log('Silent audio block:', e));
                         
                         UI.sleepCountdown.textContent = "⏱ ЖДЕМ...";
@@ -424,13 +429,15 @@
                     } else {
                         UI.sleepCountdown.textContent = "⏱ " + formatTimerDisplay(remaining);
                         UI.timerVal.textContent = Math.ceil(remaining/60000) + " МИН";
-                        updateMediaSessionTimer();
+                        // Обновляем текст в шторке блокировки каждые 2 секунды
+                        if (Math.floor(remaining / 1000) % 2 === 0) {
+                            updateMediaSessionTimer();
+                        }
                     }
                 } else if (isGracePeriod) {
                     // Мы в режиме тишины 1 минуту
                     let graceRemaining = gracePeriodEnd - now;
                     if (graceRemaining <= 0) {
-                        // Время вышло, никто не встряхнул. Отключаем таймер полностью.
                         isGracePeriod = false;
                         silentAudioEl.pause();
                         
@@ -443,6 +450,7 @@
                         if(sleepTimerInterval) clearInterval(sleepTimerInterval);
                     } else {
                         UI.sleepCountdown.textContent = "⏱ " + formatTimerDisplay(graceRemaining);
+                        updateMediaSessionTimer();
                     }
                 }
             }, 500);
@@ -536,7 +544,7 @@
         let lastUpdate = 0;
         let lastX = 0, lastY = 0, lastZ = 0;
         function handleMotion(e) {
-            if(sleepTimerDuration === 0) return;
+            if(sleepTimerDuration === 0 && !isGracePeriod) return;
             let acc = e.accelerationIncludingGravity || e.acceleration; 
             if(!acc || acc.x === null) return;
             
@@ -546,9 +554,14 @@
                 lastUpdate = curTime;
                 
                 let x = acc.x; let y = acc.y; let z = acc.z;
-                let speed = Math.abs(x + y + z - lastX - lastY - lastZ) / diffTime * 10000;
+                let deltaX = Math.abs(x - lastX);
+                let deltaY = Math.abs(y - lastY);
+                let deltaZ = Math.abs(z - lastZ);
+                let speed = ((deltaX + deltaY + deltaZ) / diffTime) * 10000;
                 
-                if (speed > 15) { // Порог встряхивания
+                // Загрубленный порог встряхивания (600 вместо 15):
+                // Резкая встряска или постукивание по корпусу.
+                if (speed > 600) {
                     resetSleepTimer();
                 }
                 lastX = x; lastY = y; lastZ = z;
