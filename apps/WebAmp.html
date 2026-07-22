@@ -424,6 +424,15 @@
                         if(isPlaying) audioEl.pause(); 
                         silentAudioEl.play().catch(e => console.log('Silent audio block:', e));
                         
+                        if (window.swRegistration && Notification.permission === 'granted') {
+                            window.swRegistration.showNotification('Таймер сна', {
+                                body: 'Музыка на паузе. Встряхните телефон!',
+                                icon: '../AppPages/screenshots/WebAmp.png',
+                                vibrate: [200, 100, 200],
+                                tag: 'sleep-timer'
+                            });
+                        }
+                        
                         UI.sleepCountdown.textContent = "⏱ ЖДЕМ...";
                         UI.timerVal.textContent = "ОЖИДАНИЕ ВСТРЯСКИ";
                         updateMediaSessionTimer();
@@ -442,13 +451,12 @@
                         isGracePeriod = false;
                         silentAudioEl.pause();
                         
-                        sleepTimerDuration = 0;
-                        UI.sleepTimer.value = 0;
+                        sleepTimerDuration = 0; // Останавливаем датчики
                         UI.btnTimer.classList.remove('timer-active');
                         UI.sleepCountdown.classList.remove('active');
                         UI.timerVal.textContent = "ВЫКЛ (УСНУЛ)";
                         updateMediaSessionTimer();
-                        if(sleepTimerInterval) clearInterval(sleepTimerInterval);
+                        if(sleepTimerInterval) { clearInterval(sleepTimerInterval); sleepTimerInterval = null; }
                     } else {
                         UI.sleepCountdown.textContent = "⏱ " + formatTimerDisplay(graceRemaining);
                         updateMediaSessionTimer();
@@ -458,6 +466,9 @@
         }
 
         UI.sleepTimer.addEventListener('input', (e) => {
+            if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+                Notification.requestPermission();
+            }
             let mins = parseInt(e.target.value);
             settings.sleepTimerMins = mins;
             saveSettings();
@@ -509,6 +520,12 @@
                     if(playlist.length > 0 && audioInitialized) {
                         if (audioCtx.state === 'suspended') audioCtx.resume();
                         audioEl.play();
+                    }
+                    
+                    if (window.swRegistration) {
+                        window.swRegistration.getNotifications({tag: 'sleep-timer'}).then(notifications => {
+                            notifications.forEach(n => n.close());
+                        });
                     }
                 }
                 
@@ -796,7 +813,21 @@
             loadTrack(prev, 0); playTrack();
         }
 
-        audioEl.addEventListener('play', () => { isPlaying = true; UI.btnPlay.innerHTML = '⏸'; UI.btnPlay.classList.add('active-toggle'); audioEl.playbackRate = settings.speed;});
+        audioEl.addEventListener('play', () => { 
+            isPlaying = true; UI.btnPlay.innerHTML = '⏸'; UI.btnPlay.classList.add('active-toggle'); audioEl.playbackRate = settings.speed;
+            
+            // Автовзвод таймера при ручном старте
+            if (settings.sleepTimerMins > 0 && (!sleepTimerInterval || isTimerExpired)) {
+                sleepTimerDuration = settings.sleepTimerMins * 60 * 1000;
+                isTimerExpired = false;
+                isGracePeriod = false;
+                UI.btnTimer.classList.add('timer-active');
+                UI.sleepCountdown.classList.add('active');
+                sleepTimerEnd = Date.now() + sleepTimerDuration;
+                startTimerLoop();
+                resetSleepTimer();
+            }
+        });
         audioEl.addEventListener('pause', () => { isPlaying = false; UI.btnPlay.innerHTML = '▶'; UI.btnPlay.classList.remove('active-toggle'); savePlaybackState(); });
         audioEl.addEventListener('ended', () => { if (repeatMode === 2) { audioEl.currentTime = 0; audioEl.play(); } else nextTrack(); });
 
@@ -903,6 +934,12 @@
         drawGrid(ctxL, UI.canvasL.width, UI.canvasL.height, true); 
         drawGrid(ctxR, UI.canvasR.width, UI.canvasR.height, true);
         loadSettings(); buildEqUI();
+        
+        if ('serviceWorker' in navigator && location.protocol === 'https:') {
+            navigator.serviceWorker.register('sw.js').then(reg => {
+                window.swRegistration = reg;
+            }).catch(e => console.log('SW registration failed:', e));
+        }
     </script>
         </body>
 </html>
