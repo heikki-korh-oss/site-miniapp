@@ -254,8 +254,10 @@
                 <input type="range" id="sleepTimer" min="0" max="30" step="5" value="0">
                 <p style="font-size:10px; color:#888; text-align:center; margin-top:10px; line-height:1.4;">
                     <strong>ЗАЩИТА ОТ ЗАСЫПАНИЯ:</strong> Пока таймер работает, кнопка "⏱️ НАСТР" пульсирует. <br>
-                    По истечении времени плеер <strong>встанет на паузу</strong> (настройка таймера сохранится). <br>
-                    Если вы <strong>пошевелите мышью, встряхнете телефон ИЛИ тапните по таймеру на дисплее</strong> — плеер автоматически снимется с паузы, а отсчет начнется заново!
+                    По истечении времени плеер <strong>встанет на паузу</strong>. <br>
+                    Далее запустится <strong>ожидание встряски (1 минута)</strong>, не давая телефону уснуть. <br>
+                    Если за эту минуту вы <strong>встряхнете телефон или тапните по таймеру</strong> — плеер снимется с паузы, а отсчет начнется заново. <br>
+                    Если нет — плеер уйдёт в глубокий сон и выключит автотаймер.
                 </p>
             </div>
         </div>
@@ -355,6 +357,12 @@
         let isTimerExpired = false; // Флаг: плеер уснул
         let sleepTimerInterval = null;
 
+        // --- ХАК ДЛЯ ФОНА: Невидимый трек с тишиной ---
+        const silentAudioEl = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA");
+        silentAudioEl.loop = true;
+        let gracePeriodEnd = 0; // timestamp
+        let isGracePeriod = false; // 1 минута ожидания встряски
+
         function formatTimerDisplay(ms) {
             if (ms <= 0) return "00:00";
             let totalSec = Math.floor(ms / 1000);
@@ -368,17 +376,41 @@
             sleepTimerInterval = setInterval(() => {
                 if(sleepTimerDuration === 0) return;
                 
+                let now = Date.now();
                 if(!isTimerExpired) {
-                    let remaining = sleepTimerEnd - Date.now();
+                    let remaining = sleepTimerEnd - now;
                     if(remaining <= 0) {
-                        // ТАЙМЕР ИСТЕК: Ставим на паузу
+                        // ТАЙМЕР ИСТЕК: Ставим на паузу и запускаем 1 минуту ожидания
                         isTimerExpired = true;
+                        isGracePeriod = true;
+                        gracePeriodEnd = now + 60000; // Ровно 1 минута
+                        
                         if(isPlaying) audioEl.pause(); 
-                        UI.sleepCountdown.textContent = "⏱ ПАУЗА";
-                        UI.timerVal.textContent = "ПАУЗА (ВСТРЯХНИТЕ)";
+                        // Включаем тишину, чтобы браузер не уснул
+                        silentAudioEl.play().catch(e => console.log('Silent audio block:', e));
+                        
+                        UI.sleepCountdown.textContent = "⏱ ЖДЕМ...";
+                        UI.timerVal.textContent = "ОЖИДАНИЕ ВСТРЯСКИ";
                     } else {
                         UI.sleepCountdown.textContent = "⏱ " + formatTimerDisplay(remaining);
                         UI.timerVal.textContent = Math.ceil(remaining/60000) + " МИН";
+                    }
+                } else if (isGracePeriod) {
+                    // Мы в режиме тишины 1 минуту
+                    let graceRemaining = gracePeriodEnd - now;
+                    if (graceRemaining <= 0) {
+                        // Время вышло, никто не встряхнул. Отключаем таймер полностью.
+                        isGracePeriod = false;
+                        silentAudioEl.pause();
+                        
+                        sleepTimerDuration = 0;
+                        UI.sleepTimer.value = 0;
+                        UI.btnTimer.classList.remove('timer-active');
+                        UI.sleepCountdown.classList.remove('active');
+                        UI.timerVal.textContent = "ВЫКЛ (УСНУЛ)";
+                        if(sleepTimerInterval) clearInterval(sleepTimerInterval);
+                    } else {
+                        UI.sleepCountdown.textContent = "⏱ " + formatTimerDisplay(graceRemaining);
                     }
                 }
             }, 500);
@@ -388,6 +420,8 @@
             let mins = parseInt(e.target.value);
             sleepTimerDuration = mins * 60 * 1000;
             isTimerExpired = false;
+            isGracePeriod = false;
+            silentAudioEl.pause();
             
             if(sleepTimerDuration === 0) {
                 // Таймер отключен
@@ -408,13 +442,12 @@
         // Сброс таймера (защита от засыпания)
         let lastInteractionTime = 0;
         function resetSleepTimer() {
-            if(sleepTimerDuration === 0) return;
+            if(sleepTimerDuration === 0 && !isGracePeriod) return;
             let now = Date.now();
             
             // Троттлинг или выход из сна
             if(now - lastInteractionTime > 1000 || isTimerExpired) {
                 lastInteractionTime = now;
-                sleepTimerEnd = now + sleepTimerDuration;
                 
                 // Визуальный отклик - вспышка таймера
                 UI.sleepCountdown.style.color = "#ffffff";
@@ -424,16 +457,22 @@
                     UI.sleepCountdown.style.borderColor = "";
                 }, 300);
                 
-                if(isTimerExpired) {
+                if(isTimerExpired && isGracePeriod) {
                     isTimerExpired = false;
+                    isGracePeriod = false;
+                    silentAudioEl.pause(); // Выключаем тишину
+                    
                     if(playlist.length > 0 && audioInitialized) {
                         if (audioCtx.state === 'suspended') audioCtx.resume();
                         audioEl.play();
                     }
                 }
                 
-                UI.sleepCountdown.textContent = "⏱ " + formatTimerDisplay(sleepTimerDuration);
-                UI.timerVal.textContent = Math.ceil(sleepTimerDuration/60000) + " МИН";
+                if (sleepTimerDuration > 0) {
+                    sleepTimerEnd = now + sleepTimerDuration;
+                    UI.sleepCountdown.textContent = "⏱ " + formatTimerDisplay(sleepTimerDuration);
+                    UI.timerVal.textContent = Math.ceil(sleepTimerDuration/60000) + " МИН";
+                }
             }
         }
         
