@@ -471,6 +471,14 @@
         <p id="rule1">• Начало: без Ь, Ъ, Ы, Й | Конец: без Ё, Ъ</p>
         <p id="rule2">• Нажмите +1, если составили слово. Слот обновится сам!</p>
         <p id="rule3">• При пропуске хода (кнопка ПРОПУСК) — штраф обоим игрокам.</p>
+    <div id="resetModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <p id="modal-text">Сбросить счетчик раундов?</p>
+            <div class="modal-btns">
+                <button id="btnResetYes" class="btn-modal yes">ДА</button>
+                <button id="btnResetNo" class="btn-modal no">ОТМЕНА</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -958,18 +966,6 @@
             resetModal.classList.add('hidden');
         });
 
-    </script>
-
-    <div id="resetModal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <p id="modal-text">Сбросить счетчик раундов?</p>
-            <div class="modal-btns">
-                <button id="btnResetYes" class="btn-modal yes">ДА</button>
-                <button id="btnResetNo" class="btn-modal no">ОТМЕНА</button>
-            </div>
-        </div>
-    </div>
-    <script>
         setLanguage(currentLang);
     </script>
 </body>
