@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <!-- PWA ТЕГИ (ЧТОБЫ ПЛЕЕР ВЫГЛЯДЕЛ КАК ПРИЛОЖЕНИЕ БЕЗ БРАУЗЕРНОЙ СТРОКИ) -->
+    <!-- PWA TAGS (SO THE PLAYER LOOKS LIKE AN APP WITHOUT A BROWSER BAR) -->
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -12,18 +12,18 @@
     
     <title>WebAmp PRO Player</title>
     <!--
-        ИНСТРУКЦИЯ ДЛЯ ПРОГРАММИСТА / АССИСТЕНТА:
-        Каждое внесение изменений в этот код должно сопровождаться увеличением номера версии на одну сотую.
-        Версия выводится в модальном окне HELP (ПОЛНОЕ РУКОВОДСТВО ПЛЕЕРА). Текущая версия: v0.39
+        INSTRUCTION FOR PROGRAMMER / ASSISTANT:
+        Every change to this code must be accompanied by an increase in the version number by one hundredth.
+        The version is displayed in the HELP modal (USER MANUAL). Current version: v0.39
     -->
     <style>
-        /* Строго блокируем скролл страницы, используем динамическую высоту dvh */
+        /* Strictly block page scroll, use dynamic dvh height */
         body { background-color: #0a0b0d; color: #e0e0e0; font-family: 'Courier New', Courier, monospace; display: flex; justify-content: center; align-items: center; height: 100vh; height: 100dvh; margin: 0; padding: 10px; user-select: none; box-sizing: border-box; overflow: hidden; }
         
-        /* Плеер занимает 100% высоты экрана, но не больше 800px на ПК */
+        /* Player takes 100% of screen height, but no more than 800px on PC */
         .generator-case { background: linear-gradient(145deg, #2b2e33, #1a1c1f); border: 4px solid #333; border-radius: 12px; padding: 15px; box-shadow: 0 20px 50px rgba(0,0,0,0.9), inset 0 0 15px rgba(255,255,255,0.05); width: 100%; max-width: 600px; height: 100%; max-height: 800px; display: flex; flex-direction: column; position: relative; box-sizing: border-box; }
         
-        /* Блоки управления не должны сжиматься */
+        /* Control blocks should not shrink */
         .header-panel, .display-container, #progressBar, .control-panel, .vol-wrapper { flex-shrink: 0; }
 
         .header-panel { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #444; padding-bottom: 8px; }
@@ -44,7 +44,7 @@
         .time-display { font-size: 26px; color: #00ff66; font-weight: bold; letter-spacing: 2px; line-height: 1; }
         .time-total { font-size: 11px; color: #00aa44; margin-left: 5px; }
 
-        /* Таймер - добавлен cursor pointer для сброса по клику */
+        /* Timer - added cursor pointer for reset on click */
         .sleep-countdown { display: none; color: #ff00aa; font-size: 10px; margin-left: 10px; font-weight: bold; border: 1px solid #ff00aa; padding: 2px 4px; border-radius: 3px; background: rgba(255,0,170,0.1); letter-spacing: 1px; vertical-align: bottom; margin-bottom: 2px; cursor: pointer; transition: color 0.1s;}
         .sleep-countdown.active { display: inline-block; }
 
@@ -78,7 +78,7 @@
         .btn-lang:hover { border-color: #00ff66; }
         .vol-wrapper { background: rgba(0,0,0,0.25); border: 1px solid #333; border-radius: 6px; padding: 8px 12px; margin-bottom: 10px; }
 
-        /* Магия для плейлиста: flex-grow и min-height: 0 не дают ему распирать родителя */
+        /* Playlist magic: flex-grow and min-height: 0 prevent it from expanding the parent */
         .playlist-container { background: #020603; border: 2px solid #1c2e24; border-radius: 5px; flex-grow: 1; flex-shrink: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 5px; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); }
         .playlist-container::-webkit-scrollbar { width: 10px; height: 8px;}
         .playlist-container::-webkit-scrollbar-track { background: #111; }
@@ -133,7 +133,7 @@
             .right-btns { display: flex; justify-content: space-between; width: 100%; gap: 5px; }
         }
 
-        /* Если экран перевернут горизонтально (очень мало высоты) - разблокируем скролл всей страницы */
+        /* If screen is landscape (very low height) - unlock scroll for the whole page */
         @media (max-height: 550px) {
             body { align-items: flex-start; overflow-y: auto; height: auto; }
             .generator-case { height: auto; min-height: 100vh; }
@@ -165,10 +165,10 @@
 
     <div class="generator-case">
         <div class="header-panel">
-            <!-- ИНСТРУКЦИЯ ДЛЯ ПРОГРАММИСТОВ / AI АССИСТЕНТОВ: -->
-            <!-- При каждом внесении изменений в логику, функционал или верстку этого файла, -->
-            <!-- ОБЯЗАТЕЛЬНО увеличивайте номер версии в объекте `langData` (в свойствах helpHTML для всех языков). -->
-            <!-- Например: с v0.37 на v0.38. Это нужно для визуального контроля обновлений. -->
+            <!-- INSTRUCTION FOR PROGRAMMERS / AI ASSISTANTS: -->
+            <!-- Whenever logic, features, or layout of this file are changed, -->
+            <!-- YOU MUST increase the version number in the `langData` object (in the helpHTML property for all languages). -->
+            <!-- For example: from v0.37 to v0.38. This is necessary for visual control of updates. -->
             <h1 id="appHeaderTitle">WebAmp PRO</h1>
             <div class="header-right">
                 <button class="btn-lang" id="btnLang" onclick="toggleLanguage()">RU</button>
@@ -358,7 +358,7 @@
                     Далее запустится <strong>ожидание встряски (1 минута)</strong>, не давая телефону уснуть. <br>
                     Если за эту минуту вы <strong>встряхнете телефон или тапните по таймеру</strong> — плеер снимется с паузы, а отсчет начнется заново. <br>
                     Если нет — плеер уйдёт в глубокий сон и выключит автотаймер.`,
-                helpHTML: `<h2>ПОЛНОЕ РУКОВОДСТВО ПЛЕЕРА <span style="font-size:12px; color:#888; font-weight:normal;">v0.39</span></h2>
+                helpHTML: `<h2>ПОЛНОЕ РУКОВОДСТВО ПЛЕЕРА <span style="font-size:12px; color:#888; font-weight:normal;">v0.40</span></h2>
             <h3>1. Приватность и Автономность 🔒</h3>
             <p>WebAmp PRO — это <strong>на 100% локальное приложение</strong>. Плеер работает только внутри вашего браузера, <strong>не использует интернет</strong> и никуда не загружает ваши аудиофайлы.</p>
             <p><span class="warn">Важно для мобильных:</span> Чтобы функция акселерометра (встряхивания) работала на телефонах, браузеры требуют, чтобы сайт открывался по защищенному протоколу <code>HTTPS</code>.</p>
@@ -422,7 +422,7 @@
                     Then a <strong>1-minute grace period</strong> starts, keeping phone awake. <br>
                     If you <strong>shake the phone or tap timer</strong> — it unpauses and resets the timer. <br>
                     If not — it goes into deep sleep and turns off the timer.`,
-                helpHTML: `<h2>USER MANUAL <span style="font-size:12px; color:#888; font-weight:normal;">v0.39</span></h2>
+                helpHTML: `<h2>USER MANUAL <span style="font-size:12px; color:#888; font-weight:normal;">v0.40</span></h2>
             <h3>1. Privacy & Offline 🔒</h3>
             <p>WebAmp PRO is <strong>100% local</strong>. It runs in your browser, <strong>doesn't use internet</strong> and doesn't upload your files.</p>
             <p><span class="warn">Mobile Note:</span> For the shake sensor to work, browsers require a secure <code>HTTPS</code> connection.</p>
@@ -486,7 +486,7 @@
                     Ardından telefonu uyanık tutan <strong>1 dakikalık bekleme süresi</strong> başlar. <br>
                     Eğer <strong>telefonu sallar veya sayaca dokunursanız</strong> çalışmaya devam eder. <br>
                     Aksi halde derin uykuya geçer.`,
-                helpHTML: `<h2>KULLANIM KILAVUZU <span style="font-size:12px; color:#888; font-weight:normal;">v0.39</span></h2>
+                helpHTML: `<h2>KULLANIM KILAVUZU <span style="font-size:12px; color:#888; font-weight:normal;">v0.40</span></h2>
             <h3>1. Gizlilik ve Çevrimdışı 🔒</h3>
             <p>WebAmp PRO <strong>%100 yereldir</strong>. İnternet kullanmaz ve dosyalarınızı yüklemez.</p>
             <p><span class="warn">Mobil Not:</span> Sallama sensörü için <code>HTTPS</code> bağlantısı gereklidir.</p>
@@ -598,17 +598,17 @@
         let audioInitialized = false;
         let lastAutoSaveTime = 0;
 
-        // --- ЛОГИКА ТАЙМЕРА СНА (с сохранением состояния) ---
-        let sleepTimerDuration = 0; // мс
+        // --- SLEEP TIMER LOGIC (with state saving) ---
+        let sleepTimerDuration = 0; // ms
         let sleepTimerEnd = 0; // timestamp
         let isTimerExpired = false; // Флаг: плеер уснул
         let sleepTimerInterval = null;
 
-        // --- ХАК ДЛЯ ФОНА: Невидимый трек с тишиной ---
+        // --- BACKGROUND HACK: Invisible silent track ---
         const silentAudioEl = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA");
         silentAudioEl.loop = true;
         let gracePeriodEnd = 0; // timestamp
-        let isGracePeriod = false; // 1 минута ожидания встряски
+        let isGracePeriod = false; // 1 minute waiting for shake
 
         function formatTimerDisplay(ms) {
             if (ms <= 0) return "00:00";
@@ -653,10 +653,10 @@
                 if(!isTimerExpired) {
                     let remaining = sleepTimerEnd - now;
                     if(remaining <= 0) {
-                        // ТАЙМЕР ИСТЕК: Ставим на паузу и запускаем 1 минуту ожидания
+                        // TIMER EXPIRED: Pause and start 1 minute grace period
                         isTimerExpired = true;
                         isGracePeriod = true;
-                        gracePeriodEnd = now + 60000; // Ровно 1 минута
+                        gracePeriodEnd = now + 60000; // Exactly 1 minute
                         
                         if(isPlaying) audioEl.pause(); 
                         silentAudioEl.play().catch(e => console.log('Silent audio block:', e));
@@ -676,19 +676,19 @@
                     } else {
                         UI.sleepCountdown.textContent = "⏱ " + formatTimerDisplay(remaining);
                         UI.timerVal.textContent = Math.ceil(remaining/60000) + " " + langData[settings.lang].minShort;
-                        // Обновляем текст в шторке блокировки каждые 2 секунды
+                        // Update text in lock screen every 2 seconds
                         if (Math.floor(remaining / 1000) % 2 === 0) {
                             updateMediaSessionTimer();
                         }
                     }
                 } else if (isGracePeriod) {
-                    // Мы в режиме тишины 1 минуту
+                    // We are in silent mode for 1 minute
                     let graceRemaining = gracePeriodEnd - now;
                     if (graceRemaining <= 0) {
                         isGracePeriod = false;
                         silentAudioEl.pause();
                         
-                        sleepTimerDuration = 0; // Останавливаем датчики
+                        sleepTimerDuration = 0; // Stop sensors
                         UI.btnTimer.classList.remove('timer-active');
                         UI.sleepCountdown.classList.remove('active');
                         UI.timerVal.textContent = langData[settings.lang].sleepOff;
@@ -715,33 +715,33 @@
             silentAudioEl.pause();
             
             if(sleepTimerDuration === 0) {
-                // Таймер отключен
+                // Timer disabled
                 UI.btnTimer.classList.remove('timer-active');
                 UI.sleepCountdown.classList.remove('active');
                 UI.timerVal.textContent = langData[settings.lang].timerOff;
                 updateMediaSessionTimer();
                 if(sleepTimerInterval) clearInterval(sleepTimerInterval);
             } else {
-                // Таймер включен
+                // Timer enabled
                 UI.btnTimer.classList.add('timer-active');
                 UI.sleepCountdown.classList.add('active');
                 sleepTimerEnd = Date.now() + sleepTimerDuration;
                 startTimerLoop();
-                resetSleepTimer(); // Инициализация
+                resetSleepTimer(); // Initialization
             }
         });
 
-        // Сброс таймера (защита от засыпания)
+        // Reset timer (sleep protection)
         let lastInteractionTime = 0;
         function resetSleepTimer() {
             if(sleepTimerDuration === 0 && !isGracePeriod) return;
             let now = Date.now();
             
-            // Троттлинг или выход из сна
+            // Throttling or waking up
             if(now - lastInteractionTime > 1000 || isTimerExpired) {
                 lastInteractionTime = now;
                 
-                // Визуальный отклик - вспышка таймера
+                // Visual feedback - timer flash
                 UI.sleepCountdown.style.color = "#ffffff";
                 UI.sleepCountdown.style.borderColor = "#ffffff";
                 setTimeout(() => {
@@ -752,7 +752,7 @@
                 if(isTimerExpired && isGracePeriod) {
                     isTimerExpired = false;
                     isGracePeriod = false;
-                    silentAudioEl.pause(); // Выключаем тишину
+                    silentAudioEl.pause(); // Stop silence
                     
                     if(playlist.length > 0 && audioInitialized) {
                         if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -775,13 +775,13 @@
             }
         }
         
-        // Ручной сброс кликом по таймеру (запасной вариант для телефонов без датчиков)
+        // Manual reset by clicking on the timer (fallback for phones without sensors)
         UI.sleepCountdown.addEventListener('click', resetSleepTimer);
         
         document.addEventListener('mousemove', resetSleepTimer);
         document.addEventListener('touchstart', resetSleepTimer);
 
-        // Улучшенный акселерометр
+        // Improved accelerometer
         let motionPermissionGranted = false;
         function requestMotionAccess() {
             if (motionPermissionGranted) return;
@@ -816,8 +816,8 @@
                 let deltaZ = Math.abs(z - lastZ);
                 let speed = ((deltaX + deltaY + deltaZ) / diffTime) * 10000;
                 
-                // Загрубленный порог встряхивания (600 вместо 15):
-                // Резкая встряска или постукивание по корпусу.
+                // Increased shake threshold (600 instead of 15):
+                // Sharp shake or tapping on the device.
                 if (speed > 600) {
                     resetSleepTimer();
                 }
@@ -830,7 +830,7 @@
             if(show) requestMotionAccess(); 
         }
 
-        // Скорость воспроизведения
+        // Playback speed
         function updateSpeed(val) {
             settings.speed = parseFloat(val);
             audioEl.playbackRate = settings.speed;
@@ -963,7 +963,7 @@
                 }
                 loadTrack(startIdx, startPos);
             } else {
-                UI.playlistUI.innerHTML = '<div style="color:red; font-size:11px; text-align:center; margin-top:30px;">Аудиофайлы не найдены.</div>';
+                UI.playlistUI.innerHTML = '<div style="color:red; font-size:11px; text-align:center; margin-top:30px;">Audio files not found.</div>';
             }
             event.target.value = '';
         });
@@ -975,7 +975,7 @@
             UI.fileCountBadge.textContent = `0 FILES LOADED`; UI.trackTitle.textContent = "NO TAPE LOADED...";
             UI.trackTitle.classList.remove('marquee'); UI.timeCurrent.textContent = "00:00"; 
             UI.timeTotal.textContent = "/ 00:00"; UI.progressBar.value = 0;
-            UI.playlistUI.innerHTML = '<div style="color: #444; font-size: 11px; text-align: center; margin-top: 30px;">Плейлист очищен. Нажмите "⏏"</div>';
+            UI.playlistUI.innerHTML = '<div style="color: #444; font-size: 11px; text-align: center; margin-top: 30px;">Playlist cleared. Press "⏏"</div>';
             UI.folderInput.value = '';
         }
 
@@ -1057,7 +1057,7 @@
         audioEl.addEventListener('play', () => { 
             isPlaying = true; UI.btnPlay.innerHTML = '⏸'; UI.btnPlay.classList.add('active-toggle'); audioEl.playbackRate = settings.speed;
             
-            // Автовзвод таймера при ручном старте
+            // Auto-arm timer on manual start
             if (settings.sleepTimerMins > 0 && (!sleepTimerInterval || isTimerExpired)) {
                 sleepTimerDuration = settings.sleepTimerMins * 60 * 1000;
                 isTimerExpired = false;
