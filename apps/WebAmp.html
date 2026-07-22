@@ -51,28 +51,26 @@
         input[type=range] { -webkit-appearance: none; width: 100%; background: #111; height: 8px; border-radius: 4px; border: 1px solid #444; outline: none; margin-bottom: 10px;}
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 18px; width: 12px; border-radius: 3px; background: #cc3300; cursor: pointer; border: 1px solid #ff5500; }
         
-        .control-panel { display: flex; align-items: center; justify-content: space-between; background: #080a0c; padding: 8px; border-radius: 5px; border: 1px solid #222; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
+        .control-panel { display: flex; align-items: center; justify-content: space-between; background: #080a0c; padding: 8px; border-radius: 5px; border: 1px solid #222; margin-bottom: 10px; flex-wrap: nowrap; gap: 8px; }
         .playback-controls { display: flex; gap: 5px; }
         .mode-controls { display: flex; gap: 5px; flex-grow: 1; justify-content: flex-start; margin-left: 5px;}
+        .right-btns { display: flex; gap: 5px; }
 
         .btn-ctrl { background: #111; border: 2px solid #333; color: #00ff66; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; transition: 0.1s; font-weight:bold;}
         .btn-ctrl:hover { border-color: #00ff66; background: #002211;}
         .btn-ctrl:active { transform: translateY(2px); }
         .btn-ctrl.active-toggle { background: #004411; border-color: #00ff66; color: #fff; box-shadow: inset 0 0 8px #00ff66;}
-        .text-btn { font-size: 10px; padding: 8px 6px; width: 60px; letter-spacing: 0px;}
+        .text-btn { font-size: 10px; padding: 8px 6px; width: 60px; letter-spacing: 0px; display: flex; align-items: center; justify-content: center;}
 
         @keyframes timerPulse {
             0% { box-shadow: inset 0 0 8px #ff00aa, 0 0 5px rgba(255,0,170,0.5); }
             50% { box-shadow: none; border-color: #550033; color: #cc0088; }
             100% { box-shadow: inset 0 0 8px #ff00aa, 0 0 5px rgba(255,0,170,0.5); }
         }
-        .timer-active { animation: timerPulse 2s infinite; color: #ff00aa !important; border-color: #ff00aa !important; background: #220011;}
-
-        .btn-eject, .btn-clear { background: linear-gradient(180deg, #555, #222); border: 2px solid #111; font-size: 15px; padding: 8px 12px; border-radius: 4px; cursor: pointer; box-shadow: inset 0 1px 0 #777, 0 2px 5px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; }
-        .btn-eject { color: #ffaa00; } .btn-clear { color: #ff3333; }
-        .btn-eject:hover { color: #ffcc00; border-color: #ffaa00; } .btn-clear:hover { color: #ff6666; border-color: #ff3333; }
-        .btn-eject:active, .btn-clear:active { transform: translateY(2px); box-shadow: inset 0 2px 5px rgba(0,0,0,0.8); }
-
+        .timer-active { animation: timerPulse 2s infinite; color: #00ff66 !important; border-color: #00ff66 !important; background: #003311;}
+        
+        .btn-lang { background: #111; color: #00ff66; border: 1px solid #333; border-radius: 4px; padding: 2px 6px; font-size: 10px; cursor: pointer; font-family: inherit; font-weight: bold; }
+        .btn-lang:hover { border-color: #00ff66; }
         .vol-wrapper { background: rgba(0,0,0,0.25); border: 1px solid #333; border-radius: 6px; padding: 8px 12px; margin-bottom: 10px; }
 
         /* Магия для плейлиста: flex-grow и min-height: 0 не дают ему распирать родителя */
@@ -123,12 +121,11 @@
             .display-bottom { flex-direction: column; align-items: flex-start; gap: 8px; }
             .scope-wrapper { width: 100%; justify-content: space-between; }
             .control-panel { flex-direction: column; align-items: stretch; gap: 8px;}
-            .playback-controls { justify-content: space-between; width: 100%; }
+            .playback-controls { justify-content: space-between; width: 100%; gap: 5px; }
             .btn-ctrl { padding: 10px; flex: 1; text-align: center; }
-            .mode-controls { margin-left: 0; justify-content: space-between; width: 100%; }
+            .mode-controls { margin-left: 0; justify-content: space-between; width: 100%; gap: 5px; }
             .text-btn { flex: 1; }
-            .right-btns { display: flex; gap: 10px; width: 100%; }
-            .btn-eject, .btn-clear { flex: 1; padding: 10px; }
+            .right-btns { display: flex; justify-content: space-between; width: 100%; gap: 5px; }
         }
 
         /* Если экран перевернут горизонтально (очень мало высоты) - разблокируем скролл всей страницы */
@@ -136,6 +133,7 @@
             body { align-items: flex-start; overflow-y: auto; height: auto; }
             .generator-case { height: auto; min-height: 100vh; }
             .playlist-container { min-height: 150px; flex: none; }
+            .control-panel { flex-wrap: nowrap; overflow-x: auto; }
         }
     
         .offline-text { font-size: 14px; line-height: 1.5; color: #e0e0e0; }
@@ -164,12 +162,13 @@
         <div class="header-panel">
             <!-- ИНСТРУКЦИЯ ДЛЯ ПРОГРАММИСТОВ / AI АССИСТЕНТОВ: -->
             <!-- При каждом внесении изменений в логику, функционал или верстку этого файла, -->
-            <!-- ОБЯЗАТЕЛЬНО увеличивайте номер версии в теге <span> ниже на +0.01. -->
-            <!-- Например: с v0.36 на v0.37. Это нужно для визуального контроля обновлений. -->
-            <h1>WebAmp PRO <span style="font-size:12px; color:#888; font-weight:normal;">v0.36</span></h1>
+            <!-- ОБЯЗАТЕЛЬНО увеличивайте номер версии в объекте `langData` (в свойствах helpHTML для всех языков). -->
+            <!-- Например: с v0.37 на v0.38. Это нужно для визуального контроля обновлений. -->
+            <h1 id="appHeaderTitle">WebAmp PRO</h1>
             <div class="header-right">
+                <button class="btn-lang" id="btnLang" onclick="toggleLanguage()">RU</button>
                 <button class="btn-help" onclick="toggleHelpModal(true)" title="Руководство">?</button>
-                <div class="badge" id="fileCountBadge">0 FILES LOADED</div>
+                <div class="badge" id="fileCountBadge">0 ФАЙЛОВ</div>
             </div>
         </div>
 
@@ -194,28 +193,28 @@
 
         <div class="control-panel">
             <div class="playback-controls">
-                <button class="btn-ctrl" onclick="prevTrack()" title="Предыдущий">⏮</button>
+                <button class="btn-ctrl" onclick="prevTrack()" id="btnPrev" title="Предыдущий">⏮</button>
                 <button class="btn-ctrl" id="btnPlay" onclick="togglePlay()" title="Плей/Пауза">▶</button>
-                <button class="btn-ctrl" onclick="stopTrack()" title="Стоп">⏹</button>
-                <button class="btn-ctrl" onclick="nextTrack()" title="Следующий">⏭</button>
+                <button class="btn-ctrl" onclick="stopTrack()" id="btnStop" title="Стоп">⏹</button>
+                <button class="btn-ctrl" onclick="nextTrack()" id="btnNext" title="Следующий">⏭</button>
             </div>
             
             <div class="mode-controls">
-                <button class="btn-ctrl text-btn" id="btnShuffle" onclick="toggleShuffle()">🔀 SHUF</button>
-                <button class="btn-ctrl text-btn active-toggle" id="btnRepeat" onclick="toggleRepeat()">🔁 ALL</button>
-                <button class="btn-ctrl text-btn" onclick="toggleEqModal(true)" style="color:#00ddff; border-color:#00ddff;">🎚️ EQ</button>
-                <button class="btn-ctrl text-btn" id="btnTimer" onclick="toggleTimerModal(true)" style="color:#ffaa00; border-color:#ffaa00;">⏱️ НАСТР</button>
+                <button class="btn-ctrl text-btn" id="btnShuffle" onclick="toggleShuffle()">СЛУЧ</button>
+                <button class="btn-ctrl text-btn active-toggle" id="btnRepeat" onclick="toggleRepeat()">ВСЕ</button>
+                <button class="btn-ctrl text-btn" id="btnEqBtn" onclick="toggleEqModal(true)">ЭКВ</button>
+                <button class="btn-ctrl text-btn" id="btnTimer" onclick="toggleTimerModal(true)">СОН</button>
             </div>
 
-            <div class="right-btns" style="display: flex; gap: 5px;">
-                <button class="btn-clear" onclick="clearPlaylist()" title="Очистить плейлист">🗑️</button>
-                <button class="btn-eject" onclick="document.getElementById('folderInput').click()" title="Загрузить папку">⏏</button>
+            <div class="right-btns">
+                <button class="btn-ctrl text-btn" id="btnClear" onclick="clearPlaylist()" title="Очистить плейлист">ОЧИСТ</button>
+                <button class="btn-ctrl text-btn" id="btnEject" onclick="document.getElementById('folderInput').click()" title="Загрузить папку">ПАПКА</button>
             </div>
             <input type="file" id="folderInput" webkitdirectory directory multiple>
         </div>
 
         <div class="vol-wrapper">
-            <label style="font-size: 10px; color: #aaa; text-transform: uppercase;">Громкость <span class="val-display" id="volVal">100%</span></label>
+            <label style="font-size: 10px; color: #aaa; text-transform: uppercase;"><span id="volLabel">Громкость</span> <span class="val-display" id="volVal">100%</span></label>
             <input type="range" id="volume" min="0" max="100" value="100" style="margin: 0;">
         </div>
 
@@ -228,14 +227,14 @@
     <div class="modal-overlay" id="eqModal" onclick="if(event.target===this) toggleEqModal(false)">
         <div class="modal-content">
             <button class="modal-close" onclick="toggleEqModal(false)">&times;</button>
-            <h2 style="color:#00ddff;">НАСТРОЙКИ ЗВУКА</h2>
+            <h2 id="eqTitle" style="color:#00ddff;">НАСТРОЙКИ ЗВУКА</h2>
             <div class="pan-section">
-                <label>БАЛАНС (L - R) <span class="val-display" id="panVal">C</span></label>
+                <label><span id="eqBalance">БАЛАНС (L - R)</span> <span class="val-display" id="panVal">C</span></label>
                 <input type="range" id="pan" min="-100" max="100" value="0">
             </div>
-            <h3 style="color:#aaa; font-size:11px; margin-bottom:5px; text-align:center;">ГРАФИЧЕСКИЙ ЭКВАЛАЙЗЕР (±12 dB)</h3>
+            <h3 id="eqGraphic" style="color:#aaa; font-size:11px; margin-bottom:5px; text-align:center;">ГРАФИЧЕСКИЙ ЭКВАЛАЙЗЕР (±12 dB)</h3>
             <div class="eq-board" id="eqBoard"></div>
-            <button class="btn-reset" onclick="resetEQ()">СБРОСИТЬ ЭКВАЛАЙЗЕР</button>
+            <button id="eqReset" class="btn-reset" onclick="resetEQ()">СБРОСИТЬ ЭКВАЛАЙЗЕР</button>
         </div>
     </div>
 
@@ -243,21 +242,21 @@
     <div class="modal-overlay" id="timerModal" onclick="if(event.target===this) toggleTimerModal(false)">
         <div class="modal-content">
             <button class="modal-close" onclick="toggleTimerModal(false)">&times;</button>
-            <h2 style="color:#ffaa00;">ТАЙМЕР И СКОРОСТЬ</h2>
+            <h2 id="timerTitle" style="color:#ffaa00;">ТАЙМЕР И СКОРОСТЬ</h2>
             
             <div class="pan-section" style="margin-top: 20px;">
-                <label>СКОРОСТЬ ВОСПРОИЗВЕДЕНИЯ <span class="val-display" id="speedVal" style="color:#ffaa00; border-color:#ffaa00;">1.0x</span></label>
+                <label><span id="speedLabel">СКОРОСТЬ ВОСПРОИЗВЕДЕНИЯ</span> <span class="val-display" id="speedVal" style="color:#ffaa00; border-color:#ffaa00;">1.0x</span></label>
                 <input type="range" id="playbackSpeed" min="0.5" max="2.0" step="0.1" value="1.0">
-                <button class="btn-reset" onclick="resetSpeed()" style="background:#221100; border-color:#ffaa00; color:#ffaa00; margin-top:5px; padding:6px;">1.0x (ОБЫЧНАЯ СКОРОСТЬ)</button>
+                <button id="speedReset" class="btn-reset" onclick="resetSpeed()" style="background:#221100; border-color:#ffaa00; color:#ffaa00; margin-top:5px; padding:6px;">1.0x (ОБЫЧНАЯ СКОРОСТЬ)</button>
             </div>
             
             <hr style="border-color:#333; margin: 25px 0;">
 
             <div class="pan-section">
-                <label>ТАЙМЕР СНА (АВТОПАУЗА) <span class="val-display" id="timerVal" style="color:#ff00aa; border-color:#ff00aa;">ВЫКЛ</span></label>
+                <label><span id="sleepLabel">ТАЙМЕР СНА (АВТОПАУЗА)</span> <span class="val-display" id="timerVal" style="color:#ff00aa; border-color:#ff00aa;">ВЫКЛ</span></label>
                 <input type="range" id="sleepTimer" min="0" max="30" step="5" value="0">
-                <p style="font-size:10px; color:#888; text-align:center; margin-top:10px; line-height:1.4;">
-                    <strong>ЗАЩИТА ОТ ЗАСЫПАНИЯ:</strong> Пока таймер работает, кнопка "⏱️ НАСТР" пульсирует. <br>
+                <p id="sleepDesc" style="font-size:10px; color:#888; text-align:center; margin-top:10px; line-height:1.4;">
+                    <strong>ЗАЩИТА ОТ ЗАСЫПАНИЯ:</strong> Пока таймер работает, кнопка "СОН" пульсирует. <br>
                     По истечении времени плеер <strong>встанет на паузу</strong>. <br>
                     Далее запустится <strong>ожидание встряски (1 минута)</strong>, не давая телефону уснуть. <br>
                     Если за эту минуту вы <strong>встряхнете телефон или тапните по таймеру</strong> — плеер снимется с паузы, а отсчет начнется заново. <br>
@@ -271,43 +270,7 @@
     <div class="modal-overlay" id="helpModal" onclick="if(event.target===this) toggleHelpModal(false)">
         <div class="modal-content help-content">
             <button class="modal-close" onclick="toggleHelpModal(false)">&times;</button>
-            <h2>ПОЛНОЕ РУКОВОДСТВО ПЛЕЕРА</h2>
-            
-            <h3>1. Приватность и Автономность 🔒</h3>
-            <p>WebAmp PRO — это <strong>на 100% локальное приложение</strong>. Плеер работает только внутри вашего браузера, <strong>не использует интернет</strong> и никуда не загружает ваши аудиофайлы. Вся обработка звука и сохранение настроек происходят исключительно на вашем физическом устройстве.</p>
-            <p><span class="warn">Важно для мобильных:</span> Чтобы функция акселерометра (встряхивания) работала на телефонах, браузеры требуют, чтобы сайт открывался по защищенному протоколу <code>HTTPS</code>. Если вы открываете плеер просто как скачанный HTML-файл, датчики будут заблокированы.</p>
-
-            <h3>2. Аудиокниги: Память позиции и Скорость 📖</h3>
-            <p>Плеер автоматически сохраняет в память браузера трек и <strong>точную секунду</strong>, на которой вы остановились. Это происходит каждый раз при нажатии на «Паузу» или автоматически каждые 5 секунд во время воспроизведения.</p>
-            <ul>
-                <li>При повторном открытии плеера просто загрузите <strong>ту же самую папку</strong> — воспроизведение продолжится с прерванного места.</li>
-                <li>В меню <strong>⏱️ НАСТР</strong> доступна регулировка скорости воспроизведения (от 0.5x до 2.0x), что очень удобно для прослушивания книг и подкастов. Установленная скорость запоминается.</li>
-                <li><span class="warn">Внимание:</span> Плеер помнит настройки позиции только для <strong>последней загруженной папки</strong>. Если вы очистите плейлист (кнопка 🗑️) или загрузите другую папку, память позиции сбросится.</li>
-            </ul>
-
-            <h3>3. Таймер сна (Эффект Мертвеца) ⏱️</h3>
-            <p>В меню <strong>⏱️ НАСТР</strong> вы можете включить таймер автопаузы (от 5 до 30 минут). Во время работы таймера на главном дисплее будет отображаться розовый индикатор обратного отсчета.</p>
-            <ul>
-                <li>Плеер следит за вашей активностью. Если вы слегка встряхнете телефон (работает по акселерометру) или пошевелите мышкой на компьютере, таймер поймет, что вы еще не спите, и <strong>сбросит счетчик обратно к максимуму</strong>.</li>
-                <li>По истечении времени плеер <strong>встанет на паузу</strong>, а на дисплее загорится надпись "ПАУЗА". Настройка самого таймера при этом не сбросится. Чтобы продолжить слушать, достаточно просто встряхнуть телефон, дернуть мышью или <strong>просто тапнуть по розовому таймеру на дисплее</strong> — плеер сам снимется с паузы.</li>
-            </ul>
-
-            <h3>4. Плейлист и Файлы 📂</h3>
-            <p>Нажмите кнопку <strong>⏏ (Извлечь/Загрузить)</strong>, чтобы выбрать папку с музыкой на вашем устройстве. Плеер автоматически отсортирует файлы в правильном порядке с учетом номеров глав и подпапок.</p>
-            <ul>
-                <li>Поддерживаемые форматы: <strong>MP3, WAV, FLAC, OGG, M4A, AAC, WEBM</strong>. Форматы плейлистов (например, m3u) автоматически отсеиваются.</li>
-                <li>Если название трека не влезает в дисплей, оно начнет плавно прокручиваться.</li>
-                <li>В самом окне плейлиста слишком длинные названия можно <strong>прокручивать (свайпать) пальцем</strong> влево и вправо.</li>
-            </ul>
-
-            <h3>5. Визуализация и Эквалайзер 📊</h3>
-            <p>Плеер оснащен двумя экранами (Левый и Правый канал). <strong>Кликните по любому из экранов (L или R)</strong>, чтобы переключить режим отображения:</p>
-            <ul>
-                <li><strong>Анализатор спектра (Столбики):</strong> Отображает амплитуду 14 частотных полос с эффектом зависания верхних пиков и градацией цвета от зеленого до красного.</li>
-                <li><strong>Осциллограф (Волна):</strong> Классическая визуализация формы звуковой волны в реальном времени.</li>
-            </ul>
-            <p>По кнопке <strong>🎚️ EQ</strong> доступен 10-полосный графический эквалайзер и ползунок Баланса (левое/правое ухо). Настройки эквалайзера сохраняются в кэше навсегда.</p>
-
+            <div id="helpContentContainer"></div>
         </div>
     </div>
 
@@ -325,7 +288,16 @@
             timerModal: document.getElementById('timerModal'), btnTimer: document.getElementById('btnTimer'),
             sleepTimer: document.getElementById('sleepTimer'), timerVal: document.getElementById('timerVal'),
             playbackSpeed: document.getElementById('playbackSpeed'), speedVal: document.getElementById('speedVal'),
-            sleepCountdown: document.getElementById('sleepCountdown')
+            sleepCountdown: document.getElementById('sleepCountdown'), btnLang: document.getElementById('btnLang'),
+            appHeaderTitle: document.getElementById('appHeaderTitle'), eqTitle: document.getElementById('eqTitle'),
+            eqBalance: document.getElementById('eqBalance'), eqGraphic: document.getElementById('eqGraphic'),
+            eqReset: document.getElementById('eqReset'), timerTitle: document.getElementById('timerTitle'),
+            speedLabel: document.getElementById('speedLabel'), speedReset: document.getElementById('speedReset'),
+            sleepLabel: document.getElementById('sleepLabel'), sleepDesc: document.getElementById('sleepDesc'),
+            btnPrev: document.getElementById('btnPrev'), btnStop: document.getElementById('btnStop'),
+            btnNext: document.getElementById('btnNext'), btnEqBtn: document.getElementById('btnEqBtn'),
+            btnClear: document.getElementById('btnClear'), btnEject: document.getElementById('btnEject'),
+            helpContentContainer: document.getElementById('helpContentContainer'), volLabel: document.getElementById('volLabel')
         };
 
         const ctxL = UI.canvasL.getContext('2d');
@@ -340,8 +312,264 @@
             vol: 100, pan: 0, shuffle: false, repeat: 1, speed: 1.0,
             eq: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             lastTrackPath: "", lastPosition: 0, visMode: 'bars',
-            sleepTimerMins: 0
+            sleepTimerMins: 0, lang: 'ru'
         };
+
+        const langData = {
+            ru: {
+                appHeaderTitle: "WebAmp PRO",
+                filesLoaded: "{n} ФАЙЛОВ",
+                noTape: "КАССЕТА НЕ ВСТАВЛЕНА...",
+                waitShake: "ОЖИДАНИЕ ВСТРЯСКИ",
+                waitMsg: "⏱ ЖДЕМ...",
+                sleepOff: "ВЫКЛ (УСНУЛ)",
+                timerOff: "ВЫКЛ",
+                minShort: "МИН",
+                pause: "ПАУЗА",
+                pauseTimerStr: "ПАУЗА (Таймер истек)",
+                btnShuffle: "СЛУЧ",
+                btnRepeatAll: "ВСЕ",
+                btnRepeatOne: "ОДИН",
+                btnRepeatOff: "ПОВТ",
+                btnEqBtn: "ЭКВ",
+                btnTimer: "СОН",
+                btnClear: "ОЧИСТ",
+                btnEject: "ПАПКА",
+                playlistEmpty: "Нажмите \"ПАПКА\" для загрузки музыки",
+                eqTitle: "НАСТРОЙКИ ЗВУКА",
+                eqBalance: "БАЛАНС (L - R)",
+                eqGraphic: "ГРАФИЧЕСКИЙ ЭКВАЛАЙЗЕР (±12 dB)",
+                eqReset: "СБРОСИТЬ ЭКВАЛАЙЗЕР",
+                timerTitle: "ТАЙМЕР И СКОРОСТЬ",
+                speedLabel: "СКОРОСТЬ ВОСПРОИЗВЕДЕНИЯ",
+                speedReset: "1.0x (ОБЫЧНАЯ СКОРОСТЬ)",
+                sleepLabel: "ТАЙМЕР СНА (АВТОПАУЗА)",
+                helpTitle: "ПОЛНОЕ РУКОВОДСТВО ПЛЕЕРА",
+                volLabel: "ГРОМКОСТЬ",
+                notifTitle: "Таймер сна",
+                notifBody: "Музыка на паузе. Встряхните телефон!",
+                sleepDesc: `<strong>ЗАЩИТА ОТ ЗАСЫПАНИЯ:</strong> Пока таймер работает, кнопка "СОН" пульсирует. <br>
+                    По истечении времени плеер <strong>встанет на паузу</strong>. <br>
+                    Далее запустится <strong>ожидание встряски (1 минута)</strong>, не давая телефону уснуть. <br>
+                    Если за эту минуту вы <strong>встряхнете телефон или тапните по таймеру</strong> — плеер снимется с паузы, а отсчет начнется заново. <br>
+                    Если нет — плеер уйдёт в глубокий сон и выключит автотаймер.`,
+                helpHTML: `<h2>ПОЛНОЕ РУКОВОДСТВО ПЛЕЕРА <span style="font-size:12px; color:#888; font-weight:normal;">v0.37</span></h2>
+            <h3>1. Приватность и Автономность 🔒</h3>
+            <p>WebAmp PRO — это <strong>на 100% локальное приложение</strong>. Плеер работает только внутри вашего браузера, <strong>не использует интернет</strong> и никуда не загружает ваши аудиофайлы.</p>
+            <p><span class="warn">Важно для мобильных:</span> Чтобы функция акселерометра (встряхивания) работала на телефонах, браузеры требуют, чтобы сайт открывался по защищенному протоколу <code>HTTPS</code>.</p>
+            <h3>2. Аудиокниги: Память позиции и Скорость 📖</h3>
+            <p>Плеер автоматически сохраняет в память браузера трек и <strong>точную секунду</strong>, на которой вы остановились.</p>
+            <ul>
+                <li>При повторном открытии плеера просто загрузите <strong>ту же самую папку</strong> — воспроизведение продолжится с прерванного места.</li>
+                <li>В меню <strong>СОН</strong> доступна регулировка скорости воспроизведения (от 0.5x до 2.0x).</li>
+                <li><span class="warn">Внимание:</span> Плеер помнит настройки позиции только для <strong>последней загруженной папки</strong>.</li>
+            </ul>
+            <h3>3. Таймер сна (Эффект Мертвеца) ⏱️</h3>
+            <p>В меню <strong>СОН</strong> вы можете включить таймер автопаузы (от 5 до 30 минут).</p>
+            <ul>
+                <li>Плеер следит за вашей активностью. Если вы слегка встряхнете телефон или пошевелите мышкой, таймер <strong>сбросит счетчик обратно к максимуму</strong>.</li>
+                <li>По истечении времени плеер <strong>встанет на паузу</strong>. Достаточно просто встряхнуть телефон или <strong>тапнуть по таймеру на дисплее</strong> — плеер снимется с паузы.</li>
+            </ul>
+            <h3>4. Плейлист и Файлы 📂</h3>
+            <p>Нажмите кнопку <strong>ПАПКА</strong>, чтобы выбрать папку с музыкой на вашем устройстве.</p>
+            <ul>
+                <li>Поддерживаемые форматы: <strong>MP3, WAV, FLAC, OGG, M4A, AAC, WEBM</strong>.</li>
+                <li>В самом окне плейлиста слишком длинные названия можно <strong>прокручивать (свайпать) пальцем</strong> влево и вправо.</li>
+            </ul>
+            <h3>5. Визуализация и Эквалайзер 📊</h3>
+            <p>Плеер оснащен двумя экранами (L и R). <strong>Кликните по любому из экранов</strong>, чтобы переключить режим отображения (Столбики или Волна).</p>
+            <p>По кнопке <strong>ЭКВ</strong> доступен 10-полосный эквалайзер и ползунок Баланса. Настройки сохраняются навсегда.</p>`
+            },
+            en: {
+                appHeaderTitle: "WebAmp PRO",
+                filesLoaded: "{n} FILES",
+                noTape: "NO TAPE LOADED...",
+                waitShake: "WAITING FOR SHAKE",
+                waitMsg: "⏱ WAITING...",
+                sleepOff: "OFF (ASLEEP)",
+                timerOff: "OFF",
+                minShort: "MIN",
+                pause: "PAUSE",
+                pauseTimerStr: "PAUSE (Timer expired)",
+                btnShuffle: "SHUF",
+                btnRepeatAll: "ALL",
+                btnRepeatOne: "ONE",
+                btnRepeatOff: "RPT",
+                btnEqBtn: "EQ",
+                btnTimer: "SLEEP",
+                btnClear: "CLEAR",
+                btnEject: "FOLDER",
+                playlistEmpty: "Press \"FOLDER\" to load music",
+                eqTitle: "SOUND SETTINGS",
+                eqBalance: "BALANCE (L - R)",
+                eqGraphic: "GRAPHIC EQUALIZER (±12 dB)",
+                eqReset: "RESET EQUALIZER",
+                timerTitle: "TIMER & SPEED",
+                speedLabel: "PLAYBACK SPEED",
+                speedReset: "1.0x (NORMAL SPEED)",
+                sleepLabel: "SLEEP TIMER (AUTO PAUSE)",
+                helpTitle: "USER MANUAL",
+                volLabel: "VOLUME",
+                notifTitle: "Sleep Timer",
+                notifBody: "Music paused. Shake the phone!",
+                sleepDesc: `<strong>DEAD MAN'S SWITCH:</strong> While timer runs, "SLEEP" button pulses. <br>
+                    When time expires, player <strong>will pause</strong>. <br>
+                    Then a <strong>1-minute grace period</strong> starts, keeping phone awake. <br>
+                    If you <strong>shake the phone or tap timer</strong> — it unpauses and resets the timer. <br>
+                    If not — it goes into deep sleep and turns off the timer.`,
+                helpHTML: `<h2>USER MANUAL <span style="font-size:12px; color:#888; font-weight:normal;">v0.37</span></h2>
+            <h3>1. Privacy & Offline 🔒</h3>
+            <p>WebAmp PRO is <strong>100% local</strong>. It runs in your browser, <strong>doesn't use internet</strong> and doesn't upload your files.</p>
+            <p><span class="warn">Mobile Note:</span> For the shake sensor to work, browsers require a secure <code>HTTPS</code> connection.</p>
+            <h3>2. Audiobooks & Speed 📖</h3>
+            <p>The player automatically saves the <strong>exact second</strong> you stopped at.</p>
+            <ul>
+                <li>Just load <strong>the exact same folder</strong> again — playback resumes automatically.</li>
+                <li>In the <strong>SLEEP</strong> menu, you can adjust playback speed (0.5x to 2.0x).</li>
+                <li><span class="warn">Warning:</span> Position is only remembered for the <strong>last loaded folder</strong>.</li>
+            </ul>
+            <h3>3. Sleep Timer ⏱️</h3>
+            <p>Enable the auto-pause timer in the <strong>SLEEP</strong> menu.</p>
+            <ul>
+                <li>It monitors activity. A slight shake of the phone resets the counter to maximum.</li>
+                <li>When time runs out, it pauses. Shake the phone or <strong>tap the timer</strong> to resume.</li>
+            </ul>
+            <h3>4. Files & Playlist 📂</h3>
+            <p>Click <strong>FOLDER</strong> to load music from your device.</p>
+            <ul>
+                <li>Supported formats: <strong>MP3, WAV, FLAC, OGG, M4A, AAC, WEBM</strong>.</li>
+                <li>You can <strong>swipe left/right</strong> on long track names in the playlist.</li>
+            </ul>
+            <h3>5. EQ & Visuals 📊</h3>
+            <p><strong>Click on any screen (L or R)</strong> to toggle visualization modes (Bars or Waveform).</p>
+            <p>The <strong>EQ</strong> button gives you a 10-band equalizer and Balance slider. Settings are saved permanently.</p>`
+            },
+            tr: {
+                appHeaderTitle: "WebAmp PRO",
+                filesLoaded: "{n} DOSYA",
+                noTape: "KASET YOK...",
+                waitShake: "SALLAMA BEKLENİYOR",
+                waitMsg: "⏱ BEKLENİYOR...",
+                sleepOff: "KAPALI (UYKU)",
+                timerOff: "KAPALI",
+                minShort: "DK",
+                pause: "DURAKLAT",
+                pauseTimerStr: "DURAKLATILDI (Süre doldu)",
+                btnShuffle: "KARIŞ",
+                btnRepeatAll: "TÜMÜ",
+                btnRepeatOne: "TEK",
+                btnRepeatOff: "TKR",
+                btnEqBtn: "EKV",
+                btnTimer: "UYKU",
+                btnClear: "TEMİZ",
+                btnEject: "KLASÖR",
+                playlistEmpty: "Müzik yüklemek için \"KLASÖR\"e basın",
+                eqTitle: "SES AYARLARI",
+                eqBalance: "DENGE (L - R)",
+                eqGraphic: "GRAFİK EKOLAYZER (±12 dB)",
+                eqReset: "EKOLAYZERİ SIFIRLA",
+                timerTitle: "ZAMANLAYICI VE HIZ",
+                speedLabel: "OYNATMA HIZI",
+                speedReset: "1.0x (NORMAL HIZ)",
+                sleepLabel: "UYKU ZAMANLAYICISI",
+                helpTitle: "KULLANIM KILAVUZU",
+                volLabel: "SES",
+                notifTitle: "Uyku Zamanlayıcısı",
+                notifBody: "Müzik duraklatıldı. Telefonu sallayın!",
+                sleepDesc: `<strong>UYKU KORUMASI:</strong> Zamanlayıcı çalışırken "UYKU" düğmesi yanıp söner. <br>
+                    Süre bittiğinde oynatıcı <strong>duraklatılır</strong>. <br>
+                    Ardından telefonu uyanık tutan <strong>1 dakikalık bekleme süresi</strong> başlar. <br>
+                    Eğer <strong>telefonu sallar veya sayaca dokunursanız</strong> çalışmaya devam eder. <br>
+                    Aksi halde derin uykuya geçer.`,
+                helpHTML: `<h2>KULLANIM KILAVUZU <span style="font-size:12px; color:#888; font-weight:normal;">v0.37</span></h2>
+            <h3>1. Gizlilik ve Çevrimdışı 🔒</h3>
+            <p>WebAmp PRO <strong>%100 yereldir</strong>. İnternet kullanmaz ve dosyalarınızı yüklemez.</p>
+            <p><span class="warn">Mobil Not:</span> Sallama sensörü için <code>HTTPS</code> bağlantısı gereklidir.</p>
+            <h3>2. Sesli Kitaplar ve Hız 📖</h3>
+            <p>Oynatıcı kaldığınız <strong>tam saniyeyi</strong> otomatik kaydeder.</p>
+            <ul>
+                <li><strong>Aynı klasörü</strong> tekrar yüklediğinizde kaldığı yerden başlar.</li>
+                <li><strong>UYKU</strong> menüsünden oynatma hızını (0.5x - 2.0x) ayarlayabilirsiniz.</li>
+            </ul>
+            <h3>3. Uyku Zamanlayıcısı ⏱️</h3>
+            <p><strong>UYKU</strong> menüsünden otomatik duraklatma süresini ayarlayın.</p>
+            <ul>
+                <li>Telefonu hafifçe sallamak sayacı sıfırlar.</li>
+                <li>Süre dolduğunda duraklatır. Devam etmek için telefonu sallayın veya <strong>sayaca dokunun</strong>.</li>
+            </ul>
+            <h3>4. Dosyalar ve Çalma Listesi 📂</h3>
+            <p>Müzik yüklemek için <strong>KLASÖR</strong> düğmesine basın.</p>
+            <ul>
+                <li>Desteklenen formatlar: <strong>MP3, WAV, FLAC, OGG, M4A, AAC, WEBM</strong>.</li>
+            </ul>
+            <h3>5. Ekolayzer ve Görsellik 📊</h3>
+            <p>Görselleştirme modunu değiştirmek için <strong>L veya R ekranlarına tıklayın</strong>.</p>
+            <p><strong>EKV</strong> düğmesi ile 10 bantlı ekolayzere ve Denge ayarına erişebilirsiniz.</p>`
+            }
+        };
+
+        const langOrder = ['ru', 'en', 'tr'];
+
+        function toggleLanguage() {
+            let idx = langOrder.indexOf(settings.lang);
+            idx = (idx + 1) % langOrder.length;
+            settings.lang = langOrder[idx];
+            updateLanguage();
+            saveSettings();
+        }
+
+        function updateLanguage() {
+            const t = langData[settings.lang];
+            UI.btnLang.textContent = settings.lang.toUpperCase();
+            
+            // Text Content Updates
+            UI.appHeaderTitle.textContent = t.appHeaderTitle;
+            UI.eqTitle.textContent = t.eqTitle;
+            UI.eqBalance.textContent = t.eqBalance;
+            UI.eqGraphic.textContent = t.eqGraphic;
+            UI.eqReset.textContent = t.eqReset;
+            UI.timerTitle.textContent = t.timerTitle;
+            UI.speedLabel.textContent = t.speedLabel;
+            UI.speedReset.textContent = t.speedReset;
+            UI.sleepLabel.textContent = t.sleepLabel;
+            UI.btnShuffle.textContent = t.btnShuffle;
+            UI.btnEqBtn.textContent = t.btnEqBtn;
+            UI.btnTimer.textContent = t.btnTimer;
+            UI.btnClear.textContent = t.btnClear;
+            UI.btnEject.textContent = t.btnEject;
+            UI.volLabel.textContent = t.volLabel;
+            
+            // HTML content
+            UI.sleepDesc.innerHTML = t.sleepDesc;
+            UI.helpContentContainer.innerHTML = t.helpHTML;
+
+            // Badges & Statuses
+            UI.fileCountBadge.textContent = t.filesLoaded.replace('{n}', playlist.length);
+            if (playlist.length === 0) {
+                UI.playlistUI.innerHTML = `<div style="color: #444; font-size: 11px; text-align: center; margin-top: 30px;">${t.playlistEmpty}</div>`;
+                UI.trackTitle.textContent = t.noTape;
+            }
+
+            // Repeat Button Update
+            const repTexts = [t.btnRepeatOff, t.btnRepeatAll, t.btnRepeatOne];
+            UI.btnRepeat.textContent = repTexts[settings.repeat];
+
+            // Timer update
+            if (sleepTimerDuration === 0) {
+                UI.timerVal.textContent = t.timerOff;
+                UI.sleepCountdown.textContent = "⏱ 00:00";
+            } else if (isGracePeriod) {
+                UI.timerVal.textContent = t.waitShake;
+                UI.sleepCountdown.textContent = t.waitMsg;
+            } else if (isTimerExpired) {
+                UI.timerVal.textContent = t.sleepOff;
+                UI.sleepCountdown.textContent = t.pause;
+            } else {
+                let remaining = sleepTimerEnd - Date.now();
+                UI.timerVal.textContent = Math.ceil(remaining/60000) + " " + t.minShort;
+            }
+            updateMediaSessionTimer();
+        }
         
         const eqFrequencies = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
         const eqLabels = ["32", "64", "125", "250", "500", "1k", "2k", "4k", "8k", "16k"];
@@ -391,12 +619,12 @@
                 let artistText = "WebAmp PRO Player";
                 if (isGracePeriod) {
                     let graceRemaining = Math.max(0, gracePeriodEnd - Date.now());
-                    artistText = "ОЖИДАНИЕ ВСТРЯСКИ (" + formatTimerDisplay(graceRemaining) + ")";
+                    artistText = langData[settings.lang].waitShake + " (" + formatTimerDisplay(graceRemaining) + ")";
                 } else if (sleepTimerDuration > 0 && !isTimerExpired) {
                     let rem = Math.max(0, sleepTimerEnd - Date.now());
-                    artistText = customTimerText || ("Таймер сна: " + formatTimerDisplay(rem));
+                    artistText = customTimerText || (langData[settings.lang].sleepLabel + ": " + formatTimerDisplay(rem));
                 } else if (isTimerExpired) {
-                    artistText = "ПАУЗА (Таймер истек)";
+                    artistText = langData[settings.lang].pauseTimerStr;
                 }
                 
                 if (artistText !== lastArtistText || navigator.mediaSession.metadata?.title !== playlist[currentIndex].name) {
@@ -429,20 +657,20 @@
                         silentAudioEl.play().catch(e => console.log('Silent audio block:', e));
                         
                         if (window.swRegistration && Notification.permission === 'granted') {
-                            window.swRegistration.showNotification('Таймер сна', {
-                                body: 'Музыка на паузе. Встряхните телефон!',
+                            window.swRegistration.showNotification(langData[settings.lang].notifTitle, {
+                                body: langData[settings.lang].notifBody,
                                 icon: '../AppPages/screenshots/WebAmp.png',
                                 vibrate: [200, 100, 200],
                                 tag: 'sleep-timer'
                             });
                         }
                         
-                        UI.sleepCountdown.textContent = "⏱ ЖДЕМ...";
-                        UI.timerVal.textContent = "ОЖИДАНИЕ ВСТРЯСКИ";
+                        UI.sleepCountdown.textContent = langData[settings.lang].waitMsg;
+                        UI.timerVal.textContent = langData[settings.lang].waitShake;
                         updateMediaSessionTimer();
                     } else {
                         UI.sleepCountdown.textContent = "⏱ " + formatTimerDisplay(remaining);
-                        UI.timerVal.textContent = Math.ceil(remaining/60000) + " МИН";
+                        UI.timerVal.textContent = Math.ceil(remaining/60000) + " " + langData[settings.lang].minShort;
                         // Обновляем текст в шторке блокировки каждые 2 секунды
                         if (Math.floor(remaining / 1000) % 2 === 0) {
                             updateMediaSessionTimer();
@@ -458,7 +686,7 @@
                         sleepTimerDuration = 0; // Останавливаем датчики
                         UI.btnTimer.classList.remove('timer-active');
                         UI.sleepCountdown.classList.remove('active');
-                        UI.timerVal.textContent = "ВЫКЛ (УСНУЛ)";
+                        UI.timerVal.textContent = langData[settings.lang].sleepOff;
                         updateMediaSessionTimer();
                         if(sleepTimerInterval) { clearInterval(sleepTimerInterval); sleepTimerInterval = null; }
                     } else {
@@ -485,7 +713,7 @@
                 // Таймер отключен
                 UI.btnTimer.classList.remove('timer-active');
                 UI.sleepCountdown.classList.remove('active');
-                UI.timerVal.textContent = "ВЫКЛ";
+                UI.timerVal.textContent = langData[settings.lang].timerOff;
                 updateMediaSessionTimer();
                 if(sleepTimerInterval) clearInterval(sleepTimerInterval);
             } else {
@@ -536,7 +764,7 @@
                 if (sleepTimerDuration > 0) {
                     sleepTimerEnd = now + sleepTimerDuration;
                     UI.sleepCountdown.textContent = "⏱ " + formatTimerDisplay(sleepTimerDuration);
-                    UI.timerVal.textContent = Math.ceil(sleepTimerDuration/60000) + " МИН";
+                    UI.timerVal.textContent = Math.ceil(sleepTimerDuration/60000) + " " + langData[settings.lang].minShort;
                     updateMediaSessionTimer();
                 }
             }
@@ -614,6 +842,7 @@
             if (!settings.visMode) settings.visMode = 'bars'; 
             if (!settings.speed) settings.speed = 1.0;
             if (settings.sleepTimerMins === undefined) settings.sleepTimerMins = 0;
+            if (!settings.lang) settings.lang = 'ru';
 
             UI.volume.value = settings.vol; UI.volVal.textContent = settings.vol + "%"; 
             if (masterGain) masterGain.gain.value = settings.vol / 100;
@@ -634,6 +863,8 @@
                 startTimerLoop();
                 resetSleepTimer();
             }
+            
+            updateLanguage();
         }
 
         function saveSettings() { localStorage.setItem('webamp_settings', JSON.stringify(settings)); }
@@ -796,9 +1027,10 @@
         let repeatMode = 1; 
         function updateRepeatUI() {
             UI.btnRepeat.classList.remove('active-toggle');
-            if (repeatMode === 0) UI.btnRepeat.innerHTML = '➡ OFF';
-            else if (repeatMode === 1) { UI.btnRepeat.innerHTML = '🔁 ALL'; UI.btnRepeat.classList.add('active-toggle'); }
-            else { UI.btnRepeat.innerHTML = '🔂 ONE'; UI.btnRepeat.classList.add('active-toggle'); }
+            const t = langData[settings.lang];
+            const repTexts = [t.btnRepeatOff, t.btnRepeatAll, t.btnRepeatOne];
+            UI.btnRepeat.textContent = repTexts[repeatMode];
+            if (repeatMode !== 0) UI.btnRepeat.classList.add('active-toggle');
         }
         function toggleRepeat() { repeatMode = (repeatMode + 1) % 3; settings.repeat = repeatMode; saveSettings(); updateRepeatUI(); }
         function toggleShuffle(forceSet) { settings.shuffle = forceSet !== undefined ? forceSet : !settings.shuffle; UI.btnShuffle.classList.toggle('active-toggle', settings.shuffle); if (!settings.shuffle) playedHistory = []; saveSettings(); }
