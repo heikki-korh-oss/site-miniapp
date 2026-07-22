@@ -346,6 +346,15 @@
         const audioEl = new Audio();
         audioEl.preservesPitch = true;
         
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.setActionHandler('play', playTrack);
+            navigator.mediaSession.setActionHandler('pause', stopTrack);
+            navigator.mediaSession.setActionHandler('previoustrack', prevTrack);
+            navigator.mediaSession.setActionHandler('nexttrack', nextTrack);
+            navigator.mediaSession.setActionHandler('seekbackward', () => { audioEl.currentTime = Math.max(0, audioEl.currentTime - 10); });
+            navigator.mediaSession.setActionHandler('seekforward', () => { if(audioEl.duration) audioEl.currentTime = Math.min(audioEl.duration, audioEl.currentTime + 10); });
+        }
+        
         let audioCtx, source, panner, splitter, analyserL, analyserR, dataL, dataR, masterGain;
         let eqNodes = [];
         let audioInitialized = false;
@@ -371,6 +380,26 @@
             return `${m}:${s}`;
         }
 
+        let lastArtistText = "";
+        function updateMediaSessionTimer() {
+            if ('mediaSession' in navigator && playlist.length > 0 && currentIndex >= 0) {
+                let artistText = "WebAmp PRO Player";
+                if (isGracePeriod) artistText = "ОЖИДАНИЕ ВСТРЯСКИ...";
+                else if (sleepTimerDuration > 0 && !isTimerExpired) artistText = "Таймер сна: " + UI.timerVal.textContent;
+                else if (isTimerExpired) artistText = "ПАУЗА (Таймер истек)";
+                
+                if (artistText !== lastArtistText || navigator.mediaSession.metadata?.title !== playlist[currentIndex].name) {
+                    lastArtistText = artistText;
+                    navigator.mediaSession.metadata = new MediaMetadata({
+                        title: playlist[currentIndex].name,
+                        artist: artistText,
+                        album: 'WebAmp Offline',
+                        artwork: [{ src: '../AppPages/screenshots/WebAmp.png', sizes: '512x512', type: 'image/png' }]
+                    });
+                }
+            }
+        }
+
         function startTimerLoop() {
             if(sleepTimerInterval) clearInterval(sleepTimerInterval);
             sleepTimerInterval = setInterval(() => {
@@ -391,9 +420,11 @@
                         
                         UI.sleepCountdown.textContent = "⏱ ЖДЕМ...";
                         UI.timerVal.textContent = "ОЖИДАНИЕ ВСТРЯСКИ";
+                        updateMediaSessionTimer();
                     } else {
                         UI.sleepCountdown.textContent = "⏱ " + formatTimerDisplay(remaining);
                         UI.timerVal.textContent = Math.ceil(remaining/60000) + " МИН";
+                        updateMediaSessionTimer();
                     }
                 } else if (isGracePeriod) {
                     // Мы в режиме тишины 1 минуту
@@ -408,6 +439,7 @@
                         UI.btnTimer.classList.remove('timer-active');
                         UI.sleepCountdown.classList.remove('active');
                         UI.timerVal.textContent = "ВЫКЛ (УСНУЛ)";
+                        updateMediaSessionTimer();
                         if(sleepTimerInterval) clearInterval(sleepTimerInterval);
                     } else {
                         UI.sleepCountdown.textContent = "⏱ " + formatTimerDisplay(graceRemaining);
@@ -428,6 +460,7 @@
                 UI.btnTimer.classList.remove('timer-active');
                 UI.sleepCountdown.classList.remove('active');
                 UI.timerVal.textContent = "ВЫКЛ";
+                updateMediaSessionTimer();
                 if(sleepTimerInterval) clearInterval(sleepTimerInterval);
             } else {
                 // Таймер включен
@@ -472,6 +505,7 @@
                     sleepTimerEnd = now + sleepTimerDuration;
                     UI.sleepCountdown.textContent = "⏱ " + formatTimerDisplay(sleepTimerDuration);
                     UI.timerVal.textContent = Math.ceil(sleepTimerDuration/60000) + " МИН";
+                    updateMediaSessionTimer();
                 }
             }
         }
@@ -681,6 +715,8 @@
             audioEl.src = URL.createObjectURL(file);
             UI.trackTitle.textContent = file.name.toUpperCase();
             checkTitleScroll();
+            
+            updateMediaSessionTimer();
             
             audioEl.addEventListener('loadedmetadata', function onMeta() {
                 if (startPosition > 0 && startPosition < audioEl.duration) audioEl.currentTime = startPosition;
