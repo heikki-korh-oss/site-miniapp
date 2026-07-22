@@ -335,7 +335,8 @@
         let settings = {
             vol: 100, pan: 0, shuffle: false, repeat: 1, speed: 1.0,
             eq: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            lastTrackPath: "", lastPosition: 0, visMode: 'bars' 
+            lastTrackPath: "", lastPosition: 0, visMode: 'bars',
+            sleepTimerMins: 0
         };
         
         const eqFrequencies = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
@@ -458,6 +459,8 @@
 
         UI.sleepTimer.addEventListener('input', (e) => {
             let mins = parseInt(e.target.value);
+            settings.sleepTimerMins = mins;
+            saveSettings();
             sleepTimerDuration = mins * 60 * 1000;
             isTimerExpired = false;
             isGracePeriod = false;
@@ -589,6 +592,7 @@
             if (saved) settings = { ...settings, ...JSON.parse(saved) };
             if (!settings.visMode) settings.visMode = 'bars'; 
             if (!settings.speed) settings.speed = 1.0;
+            if (settings.sleepTimerMins === undefined) settings.sleepTimerMins = 0;
 
             UI.volume.value = settings.vol; UI.volVal.textContent = settings.vol + "%"; 
             if (masterGain) masterGain.gain.value = settings.vol / 100;
@@ -599,6 +603,16 @@
 
             if (settings.shuffle) toggleShuffle(true);
             repeatMode = settings.repeat; updateRepeatUI();
+
+            if (settings.sleepTimerMins > 0) {
+                UI.sleepTimer.value = settings.sleepTimerMins;
+                sleepTimerDuration = settings.sleepTimerMins * 60 * 1000;
+                UI.btnTimer.classList.add('timer-active');
+                UI.sleepCountdown.classList.add('active');
+                sleepTimerEnd = Date.now() + sleepTimerDuration;
+                startTimerLoop();
+                resetSleepTimer();
+            }
         }
 
         function saveSettings() { localStorage.setItem('webamp_settings', JSON.stringify(settings)); }
