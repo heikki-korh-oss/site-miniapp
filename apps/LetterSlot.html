@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Слот-машина букв - Оффлайн версия</title>
+    <style>
+        :root {
+            --bg-color: #fcf8f2;
+            --primary-glow: rgba(251, 146, 60, 0.45);
+            --accent-glow: rgba(236, 72, 153, 0.35);
+            --text-main: #1c1917;
+            --text-muted: #78716c;
+            --text-light: #a8a29e;
+            --surface: #ffffff;
+            --surface-hover: #fafaf9;
+            --border-color: #292524;
+            --divider-color: #e7e5e4;
+            --btn-main-bg: #1c1917;
+            --btn-main-hover: #292524;
+            --btn-main-text: #ffffff;
+            --winner-color: #059669;
+            --winner-hover: #047857;
+            --gradient-overlay: linear-gradient(to bottom, rgba(231, 229, 228, 0.7), transparent, rgba(231, 229, 228, 0.7));
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #0f0e17;
+            --primary-glow: rgba(255, 137, 6, 0.3);
+            --accent-glow: rgba(127, 90, 240, 0.3);
+            --text-main: #fffffe;
+            --text-muted: #a7a9be;
+            --text-light: #a7a9be;
+            --surface: #1a1932;
+            --surface-hover: #232046;
+            --border-color: rgba(255, 255, 255, 0.15);
+            --divider-color: rgba(255, 255, 255, 0.1);
+            --btn-main-bg: #ff8906;
+            --btn-main-hover: #ffab40;
+            --btn-main-text: #0f0e17;
+            --winner-color: #2cb67d;
+            --winner-hover: #10b981;
+            --gradient-overlay: linear-gradient(to bottom, rgba(26, 25, 50, 0.9), transparent, rgba(26, 25, 50, 0.9));
+            --shadow: rgba(0, 0, 0, 0.4);
+        }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            background-color: var(--bg-color);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 1rem;
+            color: var(--text-main);
+            transition: background-color 0.3s ease, color 0.3s ease;
+            position: relative;
+            overflow-x: hidden;
+            z-index: 1;
+        }
+
+        body::before {
+            content: ''; position: fixed; top: -30%; left: -20%; width: 60vw; height: 60vw;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+            pointer-events: none; z-index: -1;
+        }
+        body::after {
+            content: ''; position: fixed; bottom: -20%; right: -20%; width: 50vw; height: 50vw;
+            background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
+            pointer-events: none; z-index: -1;
+        }
+
+        /* Топ бар для переключателя */
+        .top-bar {
+            width: 100%;
+            max-width: 352px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .rounds-counter {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: var(--text-main);
+            background: var(--surface);
+            padding: 0.2rem 1rem;
+            border-radius: 0.5rem;
+            border: 2px solid var(--border-color);
+            box-shadow: 0 2px 4px var(--shadow);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .rounds-counter:hover {
+            background-color: var(--surface-hover);
+            transform: translateY(-2px);
+        }
+        .rounds-counter .colon {
+            color: var(--winner-color);
+            margin-top: -3px;
+        }
+
+        .top-btns {
+            display: flex;
+            gap: 10px;
+        }
+
+        .theme-btn {
+            background: var(--surface);
+            border: 2px solid var(--border-color);
+            border-radius: 0.5rem;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0.3rem 0.5rem;
+            color: var(--text-main);
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px var(--shadow);
+            outline: none;
+        }
+
+        .theme-btn:hover { 
+            background-color: var(--surface-hover); 
+            transform: translateY(-2px); 
+        }
+
+        /* Контейнер счета */
+        .score-header {
+            width: 100%;
+            max-width: 352px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            background-color: var(--surface);
+            padding: 1rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px var(--shadow);
+            border-bottom: 4px solid var(--border-color);
+            box-sizing: border-box;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        .score-item { text-align: center; }
+        .score-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-light);
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+        .score-value {
+            font-size: 2.25rem;
+            font-weight: 900;
+            margin: 0;
+            color: var(--text-main);
+        }
+        .divider {
+            height: 2rem;
+            width: 1px;
+            background-color: var(--divider-color);
+            margin: 0 0.5rem;
+        }
+
+        /* Заголовки */
+        .title-section { 
+            text-align: center; 
+            margin-bottom: 1.5rem; 
+            width: 100%;
+            max-width: 352px;
+            min-height: 4.25rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .title {
+            font-size: 1.875rem;
+            font-weight: 900;
+            margin: 0 0 0.25rem 0;
+            letter-spacing: -0.025em;
+            color: var(--text-main);
+        }
+        .subtitle {
+            font-style: italic;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        /* Слоты */
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+        }
+        .slots-row {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        .slot-box {
+            position: relative;
+            width: 8rem;
+            height: 8rem;
+            background-color: var(--surface);
+            border: 4px solid var(--border-color);
+            border-radius: 1rem;
+            box-shadow: 0 20px 25px -5px var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+        .slot-gradient {
+            position: absolute;
+            inset: 0;
+            background: var(--gradient-overlay);
+            pointer-events: none;
+            z-index: 10;
+        }
+        .letter {
+            font-size: 3.75rem;
+            font-weight: 900;
+            color: var(--text-main);
+        }
+
+        /* Кнопки управления */
+        .controls-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .btn-plus {
+            width: 3.5rem;
+            height: 3.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--surface);
+            border: 2px solid var(--border-color);
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px var(--shadow);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1.25rem;
+            font-weight: 900;
+            color: var(--text-main);
+        }
+        .btn-plus:hover { background-color: var(--surface-hover); }
+        .btn-plus:active { transform: scale(0.95); }
+        .btn-plus:disabled { opacity: 0.2; cursor: not-allowed; }
+
+        .btn-main {
+            position: relative;
+            padding: 1.25rem 2rem;
+            background-color: var(--btn-main-bg);
+            color: var(--btn-main-text);
+            border-radius: 1.25rem;
+            font-weight: bold;
+            font-size: 1.125rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 10px 25px -5px var(--shadow);
+            min-width: 160px;
+        }
+        .btn-main:hover { background-color: var(--btn-main-hover); transform: translateY(-2px); }
+        .btn-main:active { transform: scale(0.95); }
+        .btn-main.winner { background-color: var(--winner-color); color: #ffffff; }
+        .btn-main.winner:hover { background-color: var(--winner-hover); }
+
+        /* Инфо */
+        .info-section {
+            margin-top: 2rem;
+            color: var(--text-light);
+            font-size: 11px;
+            width: 100%;
+            max-width: 352px;
+            text-align: center;
+            min-height: 4.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .info-section p { margin: 0.15rem 0; }
+
+        /* Анимации */
+        @keyframes slot-spin {
+            0% { transform: translateY(-20px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        .animate-slot { animation: slot-spin 0.1s ease-out; }
+
+        /* Адаптивность для мобильных */
+        @media (min-width: 640px) {
+            .slot-box { width: 10rem; height: 10rem; }
+            .letter { font-size: 4.5rem; }
+            .info-section { font-size: 12px; }
+        }
+
+        .winner-text {
+            color: var(--winner-color);
+            font-weight: 900;
+            font-size: 1.25rem;
+            text-transform: uppercase;
+            letter-spacing: -0.05em;
+        }
+
+        /* Анимация +1 */
+        .plus-one-anim {
+            position: absolute;
+            color: var(--winner-color);
+            font-size: 2.5rem;
+            font-weight: 900;
+            pointer-events: none;
+            animation: floatUp 0.8s ease-out forwards;
+            z-index: 50;
+            text-shadow: 0 2px 4px var(--shadow);
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-50px) scale(1.5); opacity: 0; }
+        }
+
+        /* Модальное окно */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            backdrop-filter: blur(4px);
+            opacity: 1;
+            transition: opacity 0.2s;
+        }
+        .modal-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .modal-content {
+            background: var(--surface);
+            padding: 2rem;
+            border-radius: 1rem;
+            border: 2px solid var(--border-color);
+            box-shadow: 0 10px 25px -5px var(--shadow);
+            text-align: center;
+            max-width: 300px;
+            width: 90%;
+            transform: scale(1);
+            transition: transform 0.2s;
+        }
+        .modal-overlay.hidden .modal-content { transform: scale(0.9); }
+        
+        .modal-content p {
+            font-size: 1.125rem;
+            font-weight: bold;
+            margin: 0 0 1.5rem 0;
+        }
+        .modal-btns {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+        .btn-modal {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: bold;
+            font-size: 1rem;
+            border: 2px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.2s;
+            flex: 1;
+        }
+        .btn-modal.yes {
+            background: var(--winner-color);
+            color: white;
+            border-color: var(--winner-color);
+        }
+        .btn-modal.yes:hover { background: var(--winner-hover); border-color: var(--winner-hover); }
+        .btn-modal.no {
+            background: transparent;
+            color: var(--text-main);
+        }
+        .btn-modal.no:hover { background: var(--surface-hover); }
+    
+        .offline-text { font-size: 14px; line-height: 1.5; color: #e0e0e0; }
+        .offline-btn {
+            background: #00ff66;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 800;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 13px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .offline-btn:hover {
+            box-shadow: 0 0 15px rgba(0, 255, 102, 0.4);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <div id="roundsCounter" class="rounds-counter" title="Сбросить счет раундов">
+            <span id="rounds1">0</span>
+            <span class="colon">:</span>
+            <span id="rounds2">0</span>
+        </div>
+        <div class="top-btns">
+            <button id="langToggle" class="theme-btn" title="Язык / Language / Dil">🇷🇺 RU</button>
+            <button id="soundToggle" class="theme-btn" title="Включить/отключить звук">🔊</button>
+            <button id="themeToggle" class="theme-btn" title="Переключить тему">🌙</button>
+        </div>
+    </div>
+
+    <div class="score-header">
+        <div class="score-item">
+            <p id="p1-label" class="score-label">Игрок 1</p>
+            <p id="score1" class="score-value">0</p>
+        </div>
+        <div class="divider"></div>
+        <div class="score-item">
+            <p id="p2-label" class="score-label">Игрок 2</p>
+            <p id="score2" class="score-value">0</p>
+        </div>
+    </div>
+
+    <div class="title-section">
+        <h1 id="title-text" class="title" style="font-size: 1.5rem; line-height: 1.2;">Слово на эти буквы</h1>
+        <p id="status-text" class="subtitle" style="margin-top: 0.5rem;">Кто угадал первым — жмет +1</p>
+    </div>
+
+    <div class="game-container">
+        <div class="slots-row">
+            <div class="slot-box">
+                <div class="slot-gradient"></div>
+                <div id="left-letter" class="letter">?</div>
+            </div>
+            <div class="slot-box">
+                <div class="slot-gradient"></div>
+                <div id="right-letter" class="letter">?</div>
+            </div>
+        </div>
+
+        <div class="controls-row">
+            <button id="p1-btn" class="btn-plus" title="Очко Игроку 1">+1</button>
+            <button id="spin-btn" class="btn-main"><span id="btn-text">ИГРАТЬ</span></button>
+            <button id="p2-btn" class="btn-plus" title="Очко Игроку 2">+1</button>
+        </div>
+    </div>
+
+    <div id="info-section" class="info-section">
+        <p id="rule1">• Начало: без Ь, Ъ, Ы, Й | Конец: без Ё, Ъ</p>
+        <p id="rule2">• Нажмите +1, если составили слово. Слот обновится сам!</p>
+        <p id="rule3">• При пропуске хода (кнопка ПРОПУСК) — штраф обоим игрокам.</p>
+    </div>
+
+    <script>
+        const TRANSLATIONS = {
+            ru: {
+                flag: 'RU',
+                title: 'Слово на эти буквы',
+                subtitle: 'Кто угадал первым — жмет +1',
+                player1: 'Игрок 1',
+                player2: 'Игрок 2',
+                play: 'ИГРАТЬ',
+                skip: 'ПРОПУСК',
+                spinning: 'КРУТИМ...',
+                newGame: 'НОВАЯ ИГРА',
+                winner: 'ВЫИГРАЛ!',
+                rule1: '• Начало: без Ь, Ъ, Ы, Й | Конец: без Ё, Ъ',
+                rule2: '• Нажмите +1, если составили слово. Слот обновится сам!',
+                rule3: '• При пропуске хода (кнопка ПРОПУСК) — штраф обоим игрокам.',
+                modalTitle: 'Сбросить счетчик раундов?',
+                yes: 'ДА',
+                no: 'ОТМЕНА',
+                resetRoundsTitle: 'Сбросить счет раундов',
+                p1Title: 'Очко Игроку 1',
+                p2Title: 'Очко Игроку 2',
+                alphabetFull: 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'.split(''),
+                alphabetStart: 'АБВГДЕЁЖЗИКЛМНОПРСТУФХЦЧШЩЭЮЯ'.split(''),
+                alphabetEnd: 'АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЫЬЭЮЯ'.split('')
+            },
+            en: {
+                flag: 'EN',
+                title: 'Word Slot Game',
+                subtitle: 'First to make a word presses +1',
+                player1: 'Player 1',
+                player2: 'Player 2',
+                play: 'PLAY',
+                skip: 'SKIP',
+                spinning: 'SPINNING...',
+                newGame: 'NEW GAME',
+                winner: 'WINS!',
+                rule1: '• Start: no X, Q | End: no J, Q, V, X',
+                rule2: '• Press +1 if you made a word. Slots spin automatically!',
+                rule3: '• Skipping a turn (SKIP button) — penalty for both players.',
+                modalTitle: 'Reset round counter?',
+                yes: 'YES',
+                no: 'CANCEL',
+                resetRoundsTitle: 'Reset round counter',
+                p1Title: 'Point to Player 1',
+                p2Title: 'Point to Player 2',
+                alphabetFull: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),
+                alphabetStart: 'ABCDEFGHIJKLMNOPRSTUVWYZ'.split(''),
+                alphabetEnd: 'ABCDEFGHIKLMNOPRSTUWYZ'.split('')
+            },
+            tr: {
+                flag: 'TR',
+                title: 'Kelime Slot Oyunu',
+                subtitle: 'Kelimeyi ilk bulan +1 düğmesine basar',
+                player1: 'Oyuncu 1',
+                player2: 'Oyuncu 2',
+                play: 'OYNA',
+                skip: 'PAS',
+                spinning: 'DÖNÜYOR...',
+                newGame: 'YENİ OYUN',
+                winner: 'KAZANDI!',
+                rule1: '• Başlangıç: Ğ yok | Bitiş: Ğ, J yok',
+                rule2: '• Kelimeyi bulduysanız +1\'e basın. Slotlar otomatik döner!',
+                rule3: '• Pas geçme (PAS düğmesi) — her iki oyuncuya ceza.',
+                modalTitle: 'Raund sayacını sıfırla?',
+                yes: 'EVET',
+                no: 'İPTAL',
+                resetRoundsTitle: 'Raund sayacını sıfırla',
+                p1Title: 'Oyuncu 1 Puanı',
+                p2Title: 'Oyuncu 2 Puanı',
+                alphabetFull: 'ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ'.split(''),
+                alphabetStart: 'ABCÇDEFGHIİJKLMNOÖPRSŞTUÜVYZ'.split(''),
+                alphabetEnd: 'ABCÇDEFGHIİKLMNOÖPRSŞTUÜVYZ'.split('')
+            }
+        };
+
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return null;
+        }
+        function setCookie(name, value, days = 365) {
+            const d = new Date();
+            d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
+            document.cookie = `${name}=${value};path=/;expires=${d.toUTCString()}`;
+        }
+        function detectLanguage() {
+            const savedCookie = getCookie('lang');
+            if (savedCookie && TRANSLATIONS[savedCookie]) return savedCookie;
+            const savedLocal = localStorage.getItem('lang');
+            if (savedLocal && TRANSLATIONS[savedLocal]) return savedLocal;
+            const nav = (navigator.language || navigator.userLanguage || '').toLowerCase();
+            if (nav.startsWith('tr')) return 'tr';
+            if (nav.startsWith('ru') || nav.startsWith('be') || nav.startsWith('uk')) return 'ru';
+            return 'en';
+        }
+
+        let currentLang = detectLanguage();
+        let ALPHABET_FULL = TRANSLATIONS[currentLang].alphabetFull;
+        let ALPHABET_START = TRANSLATIONS[currentLang].alphabetStart;
+        let ALPHABET_END = TRANSLATIONS[currentLang].alphabetEnd;
+
+        const leftEl = document.getElementById('left-letter');
+        const rightEl = document.getElementById('right-letter');
+        const btn = document.getElementById('spin-btn');
+        const btnText = document.getElementById('btn-text');
+        const statusText = document.getElementById('status-text');
+        const titleText = document.getElementById('title-text');
+        const score1El = document.getElementById('score1');
+        const score2El = document.getElementById('score2');
+        const p1Btn = document.getElementById('p1-btn');
+        const p2Btn = document.getElementById('p2-btn');
+        const p1Label = document.getElementById('p1-label');
+        const p2Label = document.getElementById('p2-label');
+        const themeToggle = document.getElementById('themeToggle');
+        const langToggle = document.getElementById('langToggle');
+
+        let isSpinning = false;
+        let score1 = 0;
+        let score2 = 0;
+        let winner = null;
+        let canAddPoint = false;
+        let rounds1 = parseInt(localStorage.getItem('rounds1')) || 0;
+        let rounds2 = parseInt(localStorage.getItem('rounds2')) || 0;
+
+        const rounds1El = document.getElementById('rounds1');
+        const rounds2El = document.getElementById('rounds2');
+        
+        function updateRoundsUI() {
+            rounds1El.textContent = rounds1;
+            rounds2El.textContent = rounds2;
+        }
+        updateRoundsUI();
+
+        // ==================== AUDIO ====================
+        let audioCtx = null;
+        let soundEnabled = localStorage.getItem('sound') !== 'off';
+
+        function initAudio() {
+            if (!soundEnabled) return;
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+            } catch (e) {}
+        }
+
+        function playTone(freq, dur, type = 'square', vol = 0.05) {
+            if (!audioCtx || !soundEnabled) return;
+            try {
+                const t = audioCtx.currentTime;
+                const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+                o.type = type; o.frequency.value = freq;
+                g.gain.setValueAtTime(0, t);
+                g.gain.linearRampToValueAtTime(vol, t + 0.01);
+                g.gain.linearRampToValueAtTime(0, t + dur);
+                o.connect(g); g.connect(audioCtx.destination);
+                o.start(t); o.stop(t + dur);
+            } catch (e) {}
+        }
+
+        function playCrack() {
+            if (!audioCtx || !soundEnabled) return;
+            try {
+                const dur = 0.02;
+                const bufferSize = audioCtx.sampleRate * dur;
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                const noise = audioCtx.createBufferSource();
+                noise.buffer = buffer;
+                
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'highpass';
+                filter.frequency.value = 800;
+                
+                const g = audioCtx.createGain();
+                g.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
+                
+                noise.connect(filter);
+                filter.connect(g);
+                g.connect(audioCtx.destination);
+                noise.start();
+            } catch (e) {}
+        }
+
+        function playMelody(notes) {
+            if (!audioCtx || !soundEnabled) return;
+            try {
+                let tc = audioCtx.currentTime;
+                notes.forEach(([f, d]) => {
+                    if (f > 0) {
+                        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+                        o.type = 'square'; o.frequency.value = f;
+                        g.gain.setValueAtTime(0, tc);
+                        g.gain.linearRampToValueAtTime(0.07, tc + 0.02);
+                        g.gain.setValueAtTime(0.07, tc + d - 0.02);
+                        g.gain.linearRampToValueAtTime(0, tc + d);
+                        o.connect(g); g.connect(audioCtx.destination);
+                        o.start(tc); o.stop(tc + d);
+                    }
+                    tc += d;
+                });
+            } catch (e) {}
+        }
+
+        const winMelodies = [
+            [[523.3,0.15],[659.3,0.15],[784,0.15],[1046.5,0.4]], // Mario-like
+            [[784,0.1],[784,0.1],[784,0.1],[784,0.3],[622,0.3],[698,0.3],[784,0.2],[698,0.1],[784,0.4]], // FF fanfare-like
+            [[392,0.1],[440,0.1],[493.9,0.1],[523.3,0.1],[587.3,0.1],[659.3,0.1],[740,0.1],[830.6,0.4]], // Zelda-like
+            [[987.8,0.1],[1318.5,0.3],[0,0.05],[987.8,0.1],[1318.5,0.5]], // Sonic-like
+            [[261.6,0.1],[329.6,0.1],[392,0.1],[523.3,0.1],[392,0.1],[329.6,0.1],[523.3,0.4]] // Arpeggio
+        ];
+
+        // ==================== ИНИЦИАЛИЗАЦИЯ НАСТРОЕК ====================
+        const soundToggle = document.getElementById('soundToggle');
+        soundToggle.textContent = soundEnabled ? '🔊' : '🔇';
+        
+        soundToggle.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            localStorage.setItem('sound', soundEnabled ? 'on' : 'off');
+            soundToggle.textContent = soundEnabled ? '🔊' : '🔇';
+            if (soundEnabled) initAudio();
+        });
+
+        function setTheme(theme) {
+            if (theme === 'dark') {
+                document.body.setAttribute('data-theme', 'dark');
+                themeToggle.textContent = '☀️';
+            } else {
+                document.body.removeAttribute('data-theme');
+                themeToggle.textContent = '🌙';
+            }
+        }
+
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            setTheme(savedTheme);
+        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            setTheme('dark');
+        } else {
+            setTheme('light');
+        }
+
+        themeToggle.addEventListener('click', () => {
+            let newTheme = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            setTheme(newTheme);
+            localStorage.setItem('theme', newTheme);
+        });
+
+        // Механика игры
+        function getRandom(arr) {
+            return arr[Math.floor(Math.random() * arr.length)];
+        }
+
+        async function spinSlot(el, target) {
+            initAudio();
+            const iterations = 20;
+            const speed = 50;
+            for (let i = 0; i < iterations; i++) {
+                el.textContent = getRandom(ALPHABET_FULL);
+                el.classList.remove('animate-slot');
+                void el.offsetWidth;
+                el.classList.add('animate-slot');
+                
+                // Звук трещотки слота
+                playCrack();
+                
+                await new Promise(r => setTimeout(r, speed + (i * 2)));
+            }
+            el.textContent = target;
+            playTone(600, 0.1, 'sine', 0.05); // Звук фиксации буквы
+        }
+
+        function updateButtons() {
+            p1Btn.disabled = isSpinning || !!winner || !canAddPoint;
+            p2Btn.disabled = isSpinning || !!winner || !canAddPoint;
+            p1Btn.style.opacity = p1Btn.disabled ? '0.2' : '1';
+            p2Btn.style.opacity = p2Btn.disabled ? '0.2' : '1';
+        }
+
+        function checkWinner() {
+            if (score1 >= 10) {
+                winner = 1;
+                rounds1++;
+                localStorage.setItem('rounds1', rounds1);
+            } else if (score2 >= 10) {
+                winner = 2;
+                rounds2++;
+                localStorage.setItem('rounds2', rounds2);
+            }
+
+            if (winner) {
+                updateRoundsUI();
+                const t = TRANSLATIONS[currentLang];
+                const winnerName = winner === 1 ? t.player1 : t.player2;
+                statusText.textContent = `🎉 ${winnerName} ${t.winner}`;
+                statusText.classList.add('winner-text');
+                btnText.textContent = t.newGame;
+                btn.classList.add('winner');
+                updateButtons();
+                
+                initAudio();
+                const randomMelody = winMelodies[Math.floor(Math.random() * winMelodies.length)];
+                playMelody(randomMelody);
+            }
+        }
+
+        function setLanguage(lang) {
+            if (!TRANSLATIONS[lang]) return;
+            currentLang = lang;
+            setCookie('lang', lang);
+            localStorage.setItem('lang', lang);
+
+            const t = TRANSLATIONS[lang];
+            ALPHABET_FULL = t.alphabetFull;
+            ALPHABET_START = t.alphabetStart;
+            ALPHABET_END = t.alphabetEnd;
+
+            langToggle.textContent = t.flag;
+            titleText.textContent = t.title;
+            if (!winner) {
+                statusText.textContent = t.subtitle;
+                btnText.textContent = isSpinning ? t.spinning : (canAddPoint ? t.skip : t.play);
+            } else {
+                const winnerName = winner === 1 ? t.player1 : t.player2;
+                statusText.textContent = `🎉 ${winnerName} ${t.winner}`;
+                btnText.textContent = t.newGame;
+            }
+
+            p1Label.textContent = t.player1;
+            p2Label.textContent = t.player2;
+            p1Btn.title = t.p1Title;
+            p2Btn.title = t.p2Title;
+
+            document.getElementById('rule1').textContent = t.rule1;
+            document.getElementById('rule2').textContent = t.rule2;
+            document.getElementById('rule3').textContent = t.rule3;
+
+            document.getElementById('modal-text').textContent = t.modalTitle;
+            document.getElementById('btnResetYes').textContent = t.yes;
+            document.getElementById('btnResetNo').textContent = t.no;
+            document.getElementById('roundsCounter').title = t.resetRoundsTitle;
+        }
+
+        langToggle.addEventListener('click', () => {
+            initAudio();
+            playTone(700, 0.05, 'sine', 0.05);
+            const langs = ['ru', 'en', 'tr'];
+            const nextIdx = (langs.indexOf(currentLang) + 1) % langs.length;
+            setLanguage(langs[nextIdx]);
+        });
+
+        function resetGame() {
+            score1 = 0;
+            score2 = 0;
+            winner = null;
+            canAddPoint = false;
+            score1El.textContent = '0';
+            score2El.textContent = '0';
+            leftEl.textContent = '?';
+            rightEl.textContent = '?';
+            const t = TRANSLATIONS[currentLang];
+            statusText.textContent = t.subtitle;
+            statusText.classList.remove('winner-text');
+            btnText.textContent = t.play;
+            btn.classList.remove('winner');
+            updateButtons();
+        }
+
+        async function play(isManual = true) {
+            if (winner) {
+                resetGame();
+                return;
+            }
+            if (isSpinning) return;
+            
+            if (isManual && canAddPoint) {
+                score1 = Math.max(0, score1 - 1);
+                score2 = Math.max(0, score2 - 1);
+                score1El.textContent = score1;
+                score2El.textContent = score2;
+                initAudio();
+                playTone(150, 0.2, 'sawtooth', 0.05); // Звук штрафа
+            }
+
+            isSpinning = true;
+            canAddPoint = false;
+            updateButtons();
+            
+            btn.style.opacity = '0.5';
+            btnText.textContent = TRANSLATIONS[currentLang].spinning;
+
+            const startLetter = getRandom(ALPHABET_START);
+            const endLetter = getRandom(ALPHABET_END);
+
+            await Promise.all([
+                spinSlot(leftEl, startLetter),
+                new Promise(r => setTimeout(r, 200)).then(() => spinSlot(rightEl, endLetter))
+            ]);
+
+            isSpinning = false;
+            canAddPoint = true;
+            btn.style.opacity = '1';
+            btnText.textContent = TRANSLATIONS[currentLang].skip;
+            updateButtons();
+        }
+
+        btn.addEventListener('click', () => {
+            initAudio();
+            play(true);
+        });
+
+        function showPlusOne(btnEl) {
+            initAudio();
+            if (soundEnabled) {
+                playTone(800, 0.1, 'sine', 0.08); // Звук монетки
+                setTimeout(() => playTone(1200, 0.15, 'sine', 0.08), 100);
+            }
+            
+            const emojis = ['🎉','✨','💪','🔥','⭐','😎','🚀','🎈'];
+            const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+            
+            const animEl = document.createElement('div');
+            animEl.textContent = `+1 ${randomEmoji}`;
+            animEl.className = 'plus-one-anim';
+            
+            const rect = btnEl.getBoundingClientRect();
+            animEl.style.left = (rect.left + rect.width / 2 - 40) + 'px';
+            animEl.style.top = (rect.top - 20) + 'px';
+            
+            document.body.appendChild(animEl);
+            setTimeout(() => animEl.remove(), 800);
+        }
+
+        p1Btn.addEventListener('click', async () => {
+            if (isSpinning || winner || !canAddPoint) return;
+            score1++;
+            score1El.textContent = score1;
+            canAddPoint = false;
+            showPlusOne(p1Btn);
+            checkWinner();
+            if (!winner) await play(false);
+        });
+
+        p2Btn.addEventListener('click', async () => {
+            if (isSpinning || winner || !canAddPoint) return;
+            score2++;
+            score2El.textContent = score2;
+            canAddPoint = false;
+            showPlusOne(p2Btn);
+            checkWinner();
+            if (!winner) await play(false);
+        });
+
+        // Модальное окно сброса
+        const resetModal = document.getElementById('resetModal');
+        const roundsCounter = document.getElementById('roundsCounter');
+        
+        roundsCounter.addEventListener('click', () => {
+            initAudio();
+            playTone(600, 0.05, 'sine', 0.05);
+            resetModal.classList.remove('hidden');
+        });
+        
+        document.getElementById('btnResetNo').addEventListener('click', () => {
+            initAudio();
+            playTone(400, 0.05, 'sine', 0.05);
+            resetModal.classList.add('hidden');
+        });
+        
+        document.getElementById('btnResetYes').addEventListener('click', () => {
+            initAudio();
+            playTone(1000, 0.1, 'sine', 0.08);
+            rounds1 = 0;
+            rounds2 = 0;
+            localStorage.setItem('rounds1', 0);
+            localStorage.setItem('rounds2', 0);
+            updateRoundsUI();
+            resetModal.classList.add('hidden');
+        });
+
+    </script>
+
+    <div id="resetModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <p id="modal-text">Сбросить счетчик раундов?</p>
+            <div class="modal-btns">
+                <button id="btnResetYes" class="btn-modal yes">ДА</button>
+                <button id="btnResetNo" class="btn-modal no">ОТМЕНА</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        setLanguage(currentLang);
+    </script>
+</body>
+</html>

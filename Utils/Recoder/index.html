@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Утилита: Recoder (Конвертер Видео)</title>
+    <!-- Шрифты удалены -->
+    <style>
+        :root {
+            --bg-body: #0a0b0d;
+            --bg-panel: linear-gradient(145deg, #2b2e33, #1a1c1f);
+            --bg-card: #1e2026;
+            --border-dark: #333;
+            --border-light: rgba(255, 255, 255, 0.05);
+            --text-main: #e0e0e0;
+            --text-muted: #88929b;
+            --accent-cyan: #00ddff;
+            --accent-green: #00ff66;
+            --accent-orange: #ffaa00;
+            --accent-purple: #7f5af0;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --radius-sm: 6px;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        header {
+            background: var(--bg-panel);
+            border: 3px solid var(--border-dark);
+            border-radius: var(--radius-lg);
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6), inset 0 0 15px var(--border-light);
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 22px;
+            color: var(--accent-cyan);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-weight: 900;
+            text-shadow: 0 0 10px rgba(0, 221, 255, 0.3);
+        }
+
+        .badge-link {
+            font-size: 13px;
+            background: rgba(0, 221, 255, 0.1);
+            color: var(--accent-cyan);
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--accent-cyan);
+            text-decoration: none;
+            font-weight: 700;
+            transition: all 0.2s;
+        }
+
+        .badge-link:hover {
+            background: var(--accent-cyan);
+            color: #000;
+            box-shadow: 0 0 15px rgba(0, 221, 255, 0.4);
+        }
+
+        .section-panel {
+            background: var(--bg-panel);
+            border: 3px solid var(--border-dark);
+            border-radius: var(--radius-lg);
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.7), inset 0 0 15px var(--border-light);
+        }
+
+        .section-title {
+            margin: 0 0 20px 0;
+            font-size: 20px;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-bottom: 2px solid var(--border-dark);
+            padding-bottom: 15px;
+            font-weight: 900;
+        }
+
+        .info-block {
+            margin-bottom: 25px;
+            background: rgba(0,0,0,0.2);
+            padding: 18px;
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+
+        .info-block h3 {
+            margin: 0 0 12px 0;
+            font-size: 17px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-block p, .info-block ol, .info-block ul {
+            color: var(--text-muted);
+            line-height: 1.6;
+            font-size: 15px;
+            margin: 0;
+        }
+
+        .info-block ol, .info-block ul { padding-left: 20px; }
+        .info-block li { margin-bottom: 10px; }
+
+        .faq-box {
+            background: rgba(127, 90, 240, 0.08);
+            border: 2px dashed var(--accent-purple);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .faq-box h3 {
+            color: var(--accent-purple);
+            margin: 0 0 10px 0;
+            font-size: 17px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: var(--radius-sm);
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+            font-size: 14px;
+        }
+
+        .btn-download {
+            background: rgba(0, 221, 255, 0.1);
+            color: var(--accent-cyan);
+            border-color: var(--accent-cyan);
+        }
+        .btn-download:hover {
+            background: var(--accent-cyan);
+            color: #000;
+            box-shadow: 0 0 15px rgba(0, 221, 255, 0.4);
+        }
+
+        .btn-copy {
+            background: rgba(0, 255, 102, 0.1);
+            color: var(--accent-green);
+            border-color: var(--accent-green);
+        }
+        .btn-copy:hover {
+            background: var(--accent-green);
+            color: #000;
+            box-shadow: 0 0 15px rgba(0, 255, 102, 0.4);
+        }
+
+        .code-container {
+            background: #0d0e12;
+            border: 2px solid var(--border-dark);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            max-height: 500px;
+            overflow: auto;
+            position: relative;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        .code-container::-webkit-scrollbar { width: 10px; height: 10px; }
+        .code-container::-webkit-scrollbar-track { background: #111; }
+        .code-container::-webkit-scrollbar-thumb { background: #333; border-radius: 5px; border: 2px solid #111; }
+        .code-container::-webkit-scrollbar-thumb:hover { background: var(--accent-cyan); }
+
+        pre {
+            margin: 0;
+            color: #ccc;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            tab-size: 4;
+        }
+
+        code {
+            background: #252830;
+            color: var(--accent-cyan);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+    
+        .offline-text { font-size: 14px; line-height: 1.5; color: #e0e0e0; }
+        .offline-btn {
+            background: #00ff66;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 800;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 13px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .offline-btn:hover {
+            box-shadow: 0 0 15px rgba(0, 255, 102, 0.4);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>SYS::APPS PLATFORM</h1>
+        <a href="../../index.html" class="badge-link">◀ НАЗАД В КАТАЛОГ</a>
+    </header>
+
+    <div class="section-panel">
+        <h2 class="section-title">🎬 Утилита: Пакетный Конвертер Видео (Recoder)</h2>
+        
+        <!-- Ликбез для новичков -->
+        <div class="faq-box">
+            <h3>💡 Что такое скрипт и зачем он нужен?</h3>
+            <p>
+                Представьте, что у вас есть 100 видеороликов, и половина из них не проигрывается на телевизоре или проекторе. Перекодировать каждый видеоролик вручную через тяжелые программы заняло бы целые сутки!
+                <br><br>
+                <b>Скрипт (утилита)</b> — это маленькая умная инструкция для вашего компьютера. Она сама находит все нужные файлы, определяет, какие из них не работают на ТВ, быстро сжимает их с помощью видеокарты и сохраняет в идеальном формате <b>MP4</b>. Вы просто запускаете скрипт и отдыхаете!
+            </p>
+        </div>
+
+        <div class="info-block">
+            <h3 style="color: var(--accent-cyan);">⚙️ Как работает эта утилита?</h3>
+            <ul>
+                <li><b>Умная проверка:</b> Скрипт сам заходит во все папки и смотрит на формат файлов. Если видео уже в отличном формате MP4 — он его трогать не будет!</li>
+                <li><b>Быстрая работа через видеокарту (NVENC):</b> Если файл устарел или не поддерживается (MKV, AVI, HEVC), скрипт включает мощь вашей видеокарты NVIDIA, обработка происходит за считанные секунды.</li>
+                <li><b>Сохранение качества:</b> Разрешение видео не ухудшается (4K останется 4K, 1080p останется 1080p).</li>
+            </ul>
+        </div>
+
+        <div class="faq-box" style="border-color: var(--accent-orange); background: rgba(255, 170, 0, 0.08);">
+            <h3 style="color: var(--accent-orange);">💻 Что такое Shell / PowerShell и как запустить скрипт?</h3>
+            <p style="margin-bottom: 12px;">
+                <b>Shell (Командная строка или PowerShell)</b> — это встроенная программа в Windows. В отличие от обычных программ с красивыми кнопочками, здесь компьютеру даются текстовые команды. Запустить наш скрипт очень просто даже без опыта:
+            </p>
+            <ol>
+                <li>Скачайте файл утилиты по кнопке <b>«СКАЧАТЬ (.PS1)»</b> ниже.</li>
+                <li>Переместите скачанный файл <code>Recode_V39f.ps1</code> в папку с вашими видеофайлами.</li>
+                <li>Кликните по файлу <code>Recode_V39f.ps1</code> <b>правой кнопкой мыши</b> и выберите пункт <b>«Выполнить с помощью PowerShell»</b>.</li>
+                <li>Если Windows покажет предупреждение системы безопасности — не бойтесь, нажмите <b>«Да»</b> или введите <b>Y</b> и нажмите Enter.</li>
+            </ol>
+        </div>
+
+        <div class="btn-group">
+            <a href="Recode_V39f.ps1" download class="btn btn-download">📥 СКАЧАТЬ (.PS1)</a>
+            <button id="copyBtn" class="btn btn-copy" onclick="copyCode()">📋 СКОПИРОВАТЬ КОД В КЛИПБОРД</button>
+        </div>
+
+        <div style="margin-bottom: 10px; font-size: 13px; color: var(--text-muted);">
+            Исходный код скрипта (можно просмотреть или скопировать напрямую):
+        </div>
+
+        <div class="code-container">
+            <pre id="codeBlock">Загрузка кода...</pre>
+        </div>
+    </div>
+</div>
+
+<script>
+    const fileName = 'Recode_V39f.ps1';
+    
+    fetch(fileName)
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.text();
+        })
+        .then(text => {
+            document.getElementById('codeBlock').textContent = text;
+        })
+        .catch(error => {
+            document.getElementById('codeBlock').textContent = 
+                '⚠️ Не удалось загрузить код для предпросмотра.\n\n' +
+                'Если вы открыли страницу локально (через file://), браузер блокирует загрузку файлов в целях безопасности.\n' +
+                'Скачайте файл с помощью кнопки выше.';
+        });
+
+    function copyCode() {
+        const text = document.getElementById('codeBlock').textContent;
+        navigator.clipboard.writeText(text).then(() => {
+            const btn = document.getElementById('copyBtn');
+            const originalText = btn.innerText;
+            btn.innerText = '✅ СКОПИРОВАНО!';
+            btn.style.background = 'var(--accent-green)';
+            btn.style.color = '#000';
+            
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.style.background = 'rgba(0, 255, 102, 0.1)';
+                btn.style.color = 'var(--accent-green)';
+            }, 2000);
+        }).catch(err => {
+            alert('Ошибка копирования: ' + err);
+        });
+    }
+</script>
+
+        </body>
+</html>

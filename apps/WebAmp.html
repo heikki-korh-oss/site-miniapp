@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- PWA ТЕГИ (ЧТОБЫ ПЛЕЕР ВЫГЛЯДЕЛ КАК ПРИЛОЖЕНИЕ БЕЗ БРАУЗЕРНОЙ СТРОКИ) -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0a0b0d">
+    
+    <title>WebAmp PRO Player</title>
+    <style>
+        /* Строго блокируем скролл страницы, используем динамическую высоту dvh */
+        body { background-color: #0a0b0d; color: #e0e0e0; font-family: 'Courier New', Courier, monospace; display: flex; justify-content: center; align-items: center; height: 100vh; height: 100dvh; margin: 0; padding: 10px; user-select: none; box-sizing: border-box; overflow: hidden; }
+        
+        /* Плеер занимает 100% высоты экрана, но не больше 800px на ПК */
+        .generator-case { background: linear-gradient(145deg, #2b2e33, #1a1c1f); border: 4px solid #333; border-radius: 12px; padding: 15px; box-shadow: 0 20px 50px rgba(0,0,0,0.9), inset 0 0 15px rgba(255,255,255,0.05); width: 100%; max-width: 600px; height: 100%; max-height: 800px; display: flex; flex-direction: column; position: relative; box-sizing: border-box; }
+        
+        /* Блоки управления не должны сжиматься */
+        .header-panel, .display-container, #progressBar, .control-panel, .vol-wrapper { flex-shrink: 0; }
+
+        .header-panel { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #444; padding-bottom: 8px; }
+        h1 { font-size: 16px; letter-spacing: 2px; color: #88929b; margin: 0; text-transform: uppercase; }
+        .badge { font-size: 10px; background: #003311; color: #00ff66; padding: 3px 8px; border-radius: 3px; border: 1px solid #00ff66; box-shadow: 0 0 5px rgba(0,255,102,0.2); }
+
+        .header-right { display: flex; align-items: center; gap: 10px; }
+        .btn-help { background: #111; color: #00ddff; border: 1px solid #00ddff; border-radius: 50%; width: 22px; height: 22px; font-size: 13px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.2s; padding: 0; font-family: inherit;}
+        .btn-help:hover { background: #00ddff; color: #000; box-shadow: 0 0 8px #00ddff; }
+
+        .display-container { background-color: #020603; border: 3px solid #1c2e24; border-radius: 5px; padding: 8px 10px; margin-bottom: 10px; box-shadow: inset 0 0 20px rgba(0,255,0,0.15); display: flex; flex-direction: column; justify-content: space-between; min-height: 60px; overflow: hidden; }
+        .track-title-wrapper { width: 100%; overflow: hidden; white-space: nowrap; margin-bottom: 5px; position: relative; }
+        .track-title { display: inline-block; color: #00ff66; font-size: 14px; text-shadow: 0 0 5px rgba(0,255,102,0.5); font-weight: bold; }
+        .track-title.marquee { animation: scrollText 10s linear infinite; padding-left: 100%; }
+        @keyframes scrollText { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+
+        .display-bottom { display: flex; justify-content: space-between; align-items: flex-end; width: 100%; }
+        .time-display { font-size: 26px; color: #00ff66; font-weight: bold; letter-spacing: 2px; line-height: 1; }
+        .time-total { font-size: 11px; color: #00aa44; margin-left: 5px; }
+
+        /* Таймер - добавлен cursor pointer для сброса по клику */
+        .sleep-countdown { display: none; color: #ff00aa; font-size: 10px; margin-left: 10px; font-weight: bold; border: 1px solid #ff00aa; padding: 2px 4px; border-radius: 3px; background: rgba(255,0,170,0.1); letter-spacing: 1px; vertical-align: bottom; margin-bottom: 2px; cursor: pointer; transition: color 0.1s;}
+        .sleep-countdown.active { display: inline-block; }
+
+        .scope-wrapper { display: flex; gap: 8px; align-items: flex-end; }
+        .scope-container { display: flex; flex-direction: column; align-items: center; }
+        .scope-label { font-size: 9px; color: #00ff66; opacity: 0.8; margin-bottom: 2px; }
+        canvas { background-color: #011105; border: 1px solid #004411; border-radius: 3px; cursor: pointer; }
+
+        input[type=range] { -webkit-appearance: none; width: 100%; background: #111; height: 8px; border-radius: 4px; border: 1px solid #444; outline: none; margin-bottom: 10px;}
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 18px; width: 12px; border-radius: 3px; background: #cc3300; cursor: pointer; border: 1px solid #ff5500; }
+        
+        .control-panel { display: flex; align-items: center; justify-content: space-between; background: #080a0c; padding: 8px; border-radius: 5px; border: 1px solid #222; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
+        .playback-controls { display: flex; gap: 5px; }
+        .mode-controls { display: flex; gap: 5px; flex-grow: 1; justify-content: flex-start; margin-left: 5px;}
+
+        .btn-ctrl { background: #111; border: 2px solid #333; color: #00ff66; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; transition: 0.1s; font-weight:bold;}
+        .btn-ctrl:hover { border-color: #00ff66; background: #002211;}
+        .btn-ctrl:active { transform: translateY(2px); }
+        .btn-ctrl.active-toggle { background: #004411; border-color: #00ff66; color: #fff; box-shadow: inset 0 0 8px #00ff66;}
+        .text-btn { font-size: 10px; padding: 8px 6px; width: 60px; letter-spacing: 0px;}
+
+        @keyframes timerPulse {
+            0% { box-shadow: inset 0 0 8px #ff00aa, 0 0 5px rgba(255,0,170,0.5); }
+            50% { box-shadow: none; border-color: #550033; color: #cc0088; }
+            100% { box-shadow: inset 0 0 8px #ff00aa, 0 0 5px rgba(255,0,170,0.5); }
+        }
+        .timer-active { animation: timerPulse 2s infinite; color: #ff00aa !important; border-color: #ff00aa !important; background: #220011;}
+
+        .btn-eject, .btn-clear { background: linear-gradient(180deg, #555, #222); border: 2px solid #111; font-size: 15px; padding: 8px 12px; border-radius: 4px; cursor: pointer; box-shadow: inset 0 1px 0 #777, 0 2px 5px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; }
+        .btn-eject { color: #ffaa00; } .btn-clear { color: #ff3333; }
+        .btn-eject:hover { color: #ffcc00; border-color: #ffaa00; } .btn-clear:hover { color: #ff6666; border-color: #ff3333; }
+        .btn-eject:active, .btn-clear:active { transform: translateY(2px); box-shadow: inset 0 2px 5px rgba(0,0,0,0.8); }
+
+        .vol-wrapper { background: rgba(0,0,0,0.25); border: 1px solid #333; border-radius: 6px; padding: 8px 12px; margin-bottom: 10px; }
+
+        /* Магия для плейлиста: flex-grow и min-height: 0 не дают ему распирать родителя */
+        .playlist-container { background: #020603; border: 2px solid #1c2e24; border-radius: 5px; flex-grow: 1; flex-shrink: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 5px; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); }
+        .playlist-container::-webkit-scrollbar { width: 10px; height: 8px;}
+        .playlist-container::-webkit-scrollbar-track { background: #111; }
+        .playlist-container::-webkit-scrollbar-thumb { background: #333; border: 1px solid #555; border-radius: 2px; }
+
+        .playlist-item { font-size: 11px; padding: 4px 8px; cursor: pointer; color: #aaa; border-bottom: 1px dashed #112211; white-space: nowrap; overflow-x: auto; }
+        .playlist-item::-webkit-scrollbar { height: 0px; } 
+        .playlist-item:hover { background: #002211; color: #00ff66; }
+        .playlist-item.playing { color: #00ff66; font-weight: bold; background: #003311; border-left: 3px solid #00ff66; }
+
+        #folderInput { display: none; }
+
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; visibility: hidden; transition: 0.2s; padding: 15px; box-sizing: border-box;}
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal-content { background: #111418; border: 2px solid #00ddff; border-radius: 8px; width: 100%; max-width: 500px; padding: 15px; box-shadow: 0 0 30px rgba(0,221,255,0.2); position: relative; box-sizing: border-box; max-height: 90vh; overflow-y: auto;}
+        
+        .modal-content::-webkit-scrollbar { width: 8px; }
+        .modal-content::-webkit-scrollbar-track { background: #111; border-radius: 4px; }
+        .modal-content::-webkit-scrollbar-thumb { background: #00ddff; border-radius: 4px; }
+
+        .modal-close { position: absolute; top: 5px; right: 10px; background: none; border: none; color: #888; font-size: 28px; cursor: pointer; transition: color 0.2s; }
+        .modal-close:hover { color: #ff3300; }
+        .modal-content h2 { color: #00ddff; margin-top: 0; font-size: 15px; border-bottom: 1px solid #334; padding-bottom: 8px; text-align: center; }
+
+        .pan-section { margin-bottom: 15px; text-align: center; }
+        .pan-section label { display: block; font-size: 10px; color: #aaa; margin-bottom: 5px; text-transform: uppercase; }
+        .val-display { font-size: 11px; color: #00ff66; background: #051108; padding: 2px 5px; border: 1px solid #1c2e24; border-radius: 3px; display: inline-block; margin-left: 5px; min-width: 30px; text-align:center;}
+
+        .eq-board { display: flex; justify-content: space-between; align-items: flex-end; height: 150px; background: #080a0c; border: 1px solid #222; padding: 10px 5px 5px 5px; border-radius: 5px;}
+        .eq-band { display: flex; flex-direction: column; align-items: center; width: 100%; }
+        .eq-label { font-size: 9px; color: #888; margin-top: 5px; transform: rotate(-45deg); height: 20px;}
+        input[type=range].eq-slider { -webkit-appearance: slider-vertical; width: 20px; height: 100px; background: transparent; border: none; margin: 0; outline: none; }
+        input[type=range].eq-slider::-moz-range-track { background: #111; border: 1px solid #444; width: 8px; border-radius: 4px; }
+        input[type=range].eq-slider::-moz-range-thumb { background: #cc3300; border: 1px solid #ff5500; height: 10px; width: 20px; border-radius: 2px; }
+        .btn-reset { background: #331111; color: #ff5555; border: 1px solid #ff5555; width: 100%; padding: 8px; margin-top: 10px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+
+        .help-content h3 { color: #ffaa00; font-size: 12px; margin-top: 15px; margin-bottom: 5px; border-left: 2px solid #ffaa00; padding-left: 6px; text-transform: uppercase; }
+        .help-content p, .help-content li { font-size: 11px; color: #ccc; line-height: 1.5; margin: 4px 0; }
+        .help-content ul { padding-left: 15px; margin-top: 5px;}
+        .help-content strong { color: #00ff66; font-weight: bold; }
+        .help-content .warn { color: #ff3333; }
+
+        @media (max-width: 550px) {
+            .generator-case { padding: 10px; }
+            .display-bottom { flex-direction: column; align-items: flex-start; gap: 8px; }
+            .scope-wrapper { width: 100%; justify-content: space-between; }
+            .control-panel { flex-direction: column; align-items: stretch; gap: 8px;}
+            .playback-controls { justify-content: space-between; width: 100%; }
+            .btn-ctrl { padding: 10px; flex: 1; text-align: center; }
+            .mode-controls { margin-left: 0; justify-content: space-between; width: 100%; }
+            .text-btn { flex: 1; }
+            .right-btns { display: flex; gap: 10px; width: 100%; }
+            .btn-eject, .btn-clear { flex: 1; padding: 10px; }
+        }
+
+        /* Если экран перевернут горизонтально (очень мало высоты) - разблокируем скролл всей страницы */
+        @media (max-height: 550px) {
+            body { align-items: flex-start; overflow-y: auto; height: auto; }
+            .generator-case { height: auto; min-height: 100vh; }
+            .playlist-container { min-height: 150px; flex: none; }
+        }
+    
+        .offline-text { font-size: 14px; line-height: 1.5; color: #e0e0e0; }
+        .offline-btn {
+            background: #00ff66;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 800;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 13px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .offline-btn:hover {
+            box-shadow: 0 0 15px rgba(0, 255, 102, 0.4);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="generator-case">
+        <div class="header-panel">
+            <h1>WebAmp PRO</h1>
+            <div class="header-right">
+                <button class="btn-help" onclick="toggleHelpModal(true)" title="Руководство">?</button>
+                <div class="badge" id="fileCountBadge">0 FILES LOADED</div>
+            </div>
+        </div>
+
+        <div class="display-container">
+            <div class="track-title-wrapper">
+                <div class="track-title" id="trackTitle">NO TAPE LOADED...</div>
+            </div>
+            <div class="display-bottom">
+                <div>
+                    <span class="time-display" id="timeCurrent">00:00</span>
+                    <span class="time-total" id="timeTotal">/ 00:00</span>
+                    <span class="sleep-countdown" id="sleepCountdown" title="Нажмите чтобы сбросить таймер">⏱ 00:00</span>
+                </div>
+                <div class="scope-wrapper" title="Кликните для смены визуализации">
+                    <div class="scope-container"><span class="scope-label">L</span><canvas id="canvasL" width="70" height="25"></canvas></div>
+                    <div class="scope-container"><span class="scope-label">R</span><canvas id="canvasR" width="70" height="25"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <input type="range" id="progressBar" min="0" max="100" value="0" step="0.1">
+
+        <div class="control-panel">
+            <div class="playback-controls">
+                <button class="btn-ctrl" onclick="prevTrack()" title="Предыдущий">⏮</button>
+                <button class="btn-ctrl" id="btnPlay" onclick="togglePlay()" title="Плей/Пауза">▶</button>
+                <button class="btn-ctrl" onclick="stopTrack()" title="Стоп">⏹</button>
+                <button class="btn-ctrl" onclick="nextTrack()" title="Следующий">⏭</button>
+            </div>
+            
+            <div class="mode-controls">
+                <button class="btn-ctrl text-btn" id="btnShuffle" onclick="toggleShuffle()">🔀 SHUF</button>
+                <button class="btn-ctrl text-btn active-toggle" id="btnRepeat" onclick="toggleRepeat()">🔁 ALL</button>
+                <button class="btn-ctrl text-btn" onclick="toggleEqModal(true)" style="color:#00ddff; border-color:#00ddff;">🎚️ EQ</button>
+                <button class="btn-ctrl text-btn" id="btnTimer" onclick="toggleTimerModal(true)" style="color:#ffaa00; border-color:#ffaa00;">⏱️ НАСТР</button>
+            </div>
+
+            <div class="right-btns" style="display: flex; gap: 5px;">
+                <button class="btn-clear" onclick="clearPlaylist()" title="Очистить плейлист">🗑️</button>
+                <button class="btn-eject" onclick="document.getElementById('folderInput').click()" title="Загрузить папку">⏏</button>
+            </div>
+            <input type="file" id="folderInput" webkitdirectory directory multiple>
+        </div>
+
+        <div class="vol-wrapper">
+            <label style="font-size: 10px; color: #aaa; text-transform: uppercase;">Громкость <span class="val-display" id="volVal">100%</span></label>
+            <input type="range" id="volume" min="0" max="100" value="100" style="margin: 0;">
+        </div>
+
+        <div class="playlist-container" id="playlistUI">
+            <div style="color: #444; font-size: 11px; text-align: center; margin-top: 30px;">Нажмите "⏏" для загрузки папки</div>
+        </div>
+    </div>
+
+    <!-- Эквалайзер -->
+    <div class="modal-overlay" id="eqModal" onclick="if(event.target===this) toggleEqModal(false)">
+        <div class="modal-content">
+            <button class="modal-close" onclick="toggleEqModal(false)">&times;</button>
+            <h2 style="color:#00ddff;">НАСТРОЙКИ ЗВУКА</h2>
+            <div class="pan-section">
+                <label>БАЛАНС (L - R) <span class="val-display" id="panVal">C</span></label>
+                <input type="range" id="pan" min="-100" max="100" value="0">
+            </div>
+            <h3 style="color:#aaa; font-size:11px; margin-bottom:5px; text-align:center;">ГРАФИЧЕСКИЙ ЭКВАЛАЙЗЕР (±12 dB)</h3>
+            <div class="eq-board" id="eqBoard"></div>
+            <button class="btn-reset" onclick="resetEQ()">СБРОСИТЬ ЭКВАЛАЙЗЕР</button>
+        </div>
+    </div>
+
+    <!-- Модальное окно Скорости и Таймера -->
+    <div class="modal-overlay" id="timerModal" onclick="if(event.target===this) toggleTimerModal(false)">
+        <div class="modal-content">
+            <button class="modal-close" onclick="toggleTimerModal(false)">&times;</button>
+            <h2 style="color:#ffaa00;">ТАЙМЕР И СКОРОСТЬ</h2>
+            
+            <div class="pan-section" style="margin-top: 20px;">
+                <label>СКОРОСТЬ ВОСПРОИЗВЕДЕНИЯ <span class="val-display" id="speedVal" style="color:#ffaa00; border-color:#ffaa00;">1.0x</span></label>
+                <input type="range" id="playbackSpeed" min="0.5" max="2.0" step="0.1" value="1.0">
+                <button class="btn-reset" onclick="resetSpeed()" style="background:#221100; border-color:#ffaa00; color:#ffaa00; margin-top:5px; padding:6px;">1.0x (ОБЫЧНАЯ СКОРОСТЬ)</button>
+            </div>
+            
+            <hr style="border-color:#333; margin: 25px 0;">
+
+            <div class="pan-section">
+                <label>ТАЙМЕР СНА (АВТОПАУЗА) <span class="val-display" id="timerVal" style="color:#ff00aa; border-color:#ff00aa;">ВЫКЛ</span></label>
+                <input type="range" id="sleepTimer" min="0" max="30" step="5" value="0">
+                <p style="font-size:10px; color:#888; text-align:center; margin-top:10px; line-height:1.4;">
+                    <strong>ЗАЩИТА ОТ ЗАСЫПАНИЯ:</strong> Пока таймер работает, кнопка "⏱️ НАСТР" пульсирует. <br>
+                    По истечении времени плеер <strong>встанет на паузу</strong> (настройка таймера сохранится). <br>
+                    Если вы <strong>пошевелите мышью, встряхнете телефон ИЛИ тапните по таймеру на дисплее</strong> — плеер автоматически снимется с паузы, а отсчет начнется заново!
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Справка -->
+    <div class="modal-overlay" id="helpModal" onclick="if(event.target===this) toggleHelpModal(false)">
+        <div class="modal-content help-content">
+            <button class="modal-close" onclick="toggleHelpModal(false)">&times;</button>
+            <h2>ПОЛНОЕ РУКОВОДСТВО ПЛЕЕРА</h2>
+            
+            <h3>1. Приватность и Автономность 🔒</h3>
+            <p>WebAmp PRO — это <strong>на 100% локальное приложение</strong>. Плеер работает только внутри вашего браузера, <strong>не использует интернет</strong> и никуда не загружает ваши аудиофайлы. Вся обработка звука и сохранение настроек происходят исключительно на вашем физическом устройстве.</p>
+            <p><span class="warn">Важно для мобильных:</span> Чтобы функция акселерометра (встряхивания) работала на телефонах, браузеры требуют, чтобы сайт открывался по защищенному протоколу <code>HTTPS</code>. Если вы открываете плеер просто как скачанный HTML-файл, датчики будут заблокированы.</p>
+
+            <h3>2. Аудиокниги: Память позиции и Скорость 📖</h3>
+            <p>Плеер автоматически сохраняет в память браузера трек и <strong>точную секунду</strong>, на которой вы остановились. Это происходит каждый раз при нажатии на «Паузу» или автоматически каждые 5 секунд во время воспроизведения.</p>
+            <ul>
+                <li>При повторном открытии плеера просто загрузите <strong>ту же самую папку</strong> — воспроизведение продолжится с прерванного места.</li>
+                <li>В меню <strong>⏱️ НАСТР</strong> доступна регулировка скорости воспроизведения (от 0.5x до 2.0x), что очень удобно для прослушивания книг и подкастов. Установленная скорость запоминается.</li>
+                <li><span class="warn">Внимание:</span> Плеер помнит настройки позиции только для <strong>последней загруженной папки</strong>. Если вы очистите плейлист (кнопка 🗑️) или загрузите другую папку, память позиции сбросится.</li>
+            </ul>
+
+            <h3>3. Таймер сна (Эффект Мертвеца) ⏱️</h3>
+            <p>В меню <strong>⏱️ НАСТР</strong> вы можете включить таймер автопаузы (от 5 до 30 минут). Во время работы таймера на главном дисплее будет отображаться розовый индикатор обратного отсчета.</p>
+            <ul>
+                <li>Плеер следит за вашей активностью. Если вы слегка встряхнете телефон (работает по акселерометру) или пошевелите мышкой на компьютере, таймер поймет, что вы еще не спите, и <strong>сбросит счетчик обратно к максимуму</strong>.</li>
+                <li>По истечении времени плеер <strong>встанет на паузу</strong>, а на дисплее загорится надпись "ПАУЗА". Настройка самого таймера при этом не сбросится. Чтобы продолжить слушать, достаточно просто встряхнуть телефон, дернуть мышью или <strong>просто тапнуть по розовому таймеру на дисплее</strong> — плеер сам снимется с паузы.</li>
+            </ul>
+
+            <h3>4. Плейлист и Файлы 📂</h3>
+            <p>Нажмите кнопку <strong>⏏ (Извлечь/Загрузить)</strong>, чтобы выбрать папку с музыкой на вашем устройстве. Плеер автоматически отсортирует файлы в правильном порядке с учетом номеров глав и подпапок.</p>
+            <ul>
+                <li>Поддерживаемые форматы: <strong>MP3, WAV, FLAC, OGG, M4A, AAC, WEBM</strong>. Форматы плейлистов (например, m3u) автоматически отсеиваются.</li>
+                <li>Если название трека не влезает в дисплей, оно начнет плавно прокручиваться.</li>
+                <li>В самом окне плейлиста слишком длинные названия можно <strong>прокручивать (свайпать) пальцем</strong> влево и вправо.</li>
+            </ul>
+
+            <h3>5. Визуализация и Эквалайзер 📊</h3>
+            <p>Плеер оснащен двумя экранами (Левый и Правый канал). <strong>Кликните по любому из экранов (L или R)</strong>, чтобы переключить режим отображения:</p>
+            <ul>
+                <li><strong>Анализатор спектра (Столбики):</strong> Отображает амплитуду 14 частотных полос с эффектом зависания верхних пиков и градацией цвета от зеленого до красного.</li>
+                <li><strong>Осциллограф (Волна):</strong> Классическая визуализация формы звуковой волны в реальном времени.</li>
+            </ul>
+            <p>По кнопке <strong>🎚️ EQ</strong> доступен 10-полосный графический эквалайзер и ползунок Баланса (левое/правое ухо). Настройки эквалайзера сохраняются в кэше навсегда.</p>
+
+        </div>
+    </div>
+
+    <script>
+        const UI = {
+            folderInput: document.getElementById('folderInput'), playlistUI: document.getElementById('playlistUI'),
+            trackTitle: document.getElementById('trackTitle'), timeCurrent: document.getElementById('timeCurrent'),
+            timeTotal: document.getElementById('timeTotal'), btnPlay: document.getElementById('btnPlay'),
+            btnShuffle: document.getElementById('btnShuffle'), btnRepeat: document.getElementById('btnRepeat'),
+            progressBar: document.getElementById('progressBar'), volume: document.getElementById('volume'),
+            pan: document.getElementById('pan'), volVal: document.getElementById('volVal'), panVal: document.getElementById('panVal'),
+            canvasL: document.getElementById('canvasL'), canvasR: document.getElementById('canvasR'),
+            fileCountBadge: document.getElementById('fileCountBadge'), eqModal: document.getElementById('eqModal'), 
+            eqBoard: document.getElementById('eqBoard'), helpModal: document.getElementById('helpModal'),
+            timerModal: document.getElementById('timerModal'), btnTimer: document.getElementById('btnTimer'),
+            sleepTimer: document.getElementById('sleepTimer'), timerVal: document.getElementById('timerVal'),
+            playbackSpeed: document.getElementById('playbackSpeed'), speedVal: document.getElementById('speedVal'),
+            sleepCountdown: document.getElementById('sleepCountdown')
+        };
+
+        const ctxL = UI.canvasL.getContext('2d');
+        const ctxR = UI.canvasR.getContext('2d');
+
+        let playlist = [];
+        let currentIndex = -1;
+        let isPlaying = false;
+        let isDraggingProgress = false;
+        
+        let settings = {
+            vol: 100, pan: 0, shuffle: false, repeat: 1, speed: 1.0,
+            eq: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            lastTrackPath: "", lastPosition: 0, visMode: 'bars' 
+        };
+        
+        const eqFrequencies = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
+        const eqLabels = ["32", "64", "125", "250", "500", "1k", "2k", "4k", "8k", "16k"];
+        const validExtensions = ['mp3', 'wav', 'flac', 'ogg', 'm4a', 'aac', 'webm'];
+        let playedHistory = [];
+
+        const audioEl = new Audio();
+        audioEl.preservesPitch = true;
+        
+        let audioCtx, source, panner, splitter, analyserL, analyserR, dataL, dataR, masterGain;
+        let eqNodes = [];
+        let audioInitialized = false;
+        let lastAutoSaveTime = 0;
+
+        // --- ЛОГИКА ТАЙМЕРА СНА (с сохранением состояния) ---
+        let sleepTimerDuration = 0; // мс
+        let sleepTimerEnd = 0; // timestamp
+        let isTimerExpired = false; // Флаг: плеер уснул
+        let sleepTimerInterval = null;
+
+        function formatTimerDisplay(ms) {
+            if (ms <= 0) return "00:00";
+            let totalSec = Math.floor(ms / 1000);
+            let m = Math.floor(totalSec / 60).toString().padStart(2, '0');
+            let s = (totalSec % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        function startTimerLoop() {
+            if(sleepTimerInterval) clearInterval(sleepTimerInterval);
+            sleepTimerInterval = setInterval(() => {
+                if(sleepTimerDuration === 0) return;
+                
+                if(!isTimerExpired) {
+                    let remaining = sleepTimerEnd - Date.now();
+                    if(remaining <= 0) {
+                        // ТАЙМЕР ИСТЕК: Ставим на паузу
+                        isTimerExpired = true;
+                        if(isPlaying) audioEl.pause(); 
+                        UI.sleepCountdown.textContent = "⏱ ПАУЗА";
+                        UI.timerVal.textContent = "ПАУЗА (ВСТРЯХНИТЕ)";
+                    } else {
+                        UI.sleepCountdown.textContent = "⏱ " + formatTimerDisplay(remaining);
+                        UI.timerVal.textContent = Math.ceil(remaining/60000) + " МИН";
+                    }
+                }
+            }, 500);
+        }
+
+        UI.sleepTimer.addEventListener('input', (e) => {
+            let mins = parseInt(e.target.value);
+            sleepTimerDuration = mins * 60 * 1000;
+            isTimerExpired = false;
+            
+            if(sleepTimerDuration === 0) {
+                // Таймер отключен
+                UI.btnTimer.classList.remove('timer-active');
+                UI.sleepCountdown.classList.remove('active');
+                UI.timerVal.textContent = "ВЫКЛ";
+                if(sleepTimerInterval) clearInterval(sleepTimerInterval);
+            } else {
+                // Таймер включен
+                UI.btnTimer.classList.add('timer-active');
+                UI.sleepCountdown.classList.add('active');
+                sleepTimerEnd = Date.now() + sleepTimerDuration;
+                startTimerLoop();
+                resetSleepTimer(); // Инициализация
+            }
+        });
+
+        // Сброс таймера (защита от засыпания)
+        let lastInteractionTime = 0;
+        function resetSleepTimer() {
+            if(sleepTimerDuration === 0) return;
+            let now = Date.now();
+            
+            // Троттлинг или выход из сна
+            if(now - lastInteractionTime > 1000 || isTimerExpired) {
+                lastInteractionTime = now;
+                sleepTimerEnd = now + sleepTimerDuration;
+                
+                // Визуальный отклик - вспышка таймера
+                UI.sleepCountdown.style.color = "#ffffff";
+                UI.sleepCountdown.style.borderColor = "#ffffff";
+                setTimeout(() => {
+                    UI.sleepCountdown.style.color = "";
+                    UI.sleepCountdown.style.borderColor = "";
+                }, 300);
+                
+                if(isTimerExpired) {
+                    isTimerExpired = false;
+                    if(playlist.length > 0 && audioInitialized) {
+                        if (audioCtx.state === 'suspended') audioCtx.resume();
+                        audioEl.play();
+                    }
+                }
+                
+                UI.sleepCountdown.textContent = "⏱ " + formatTimerDisplay(sleepTimerDuration);
+                UI.timerVal.textContent = Math.ceil(sleepTimerDuration/60000) + " МИН";
+            }
+        }
+        
+        // Ручной сброс кликом по таймеру (запасной вариант для телефонов без датчиков)
+        UI.sleepCountdown.addEventListener('click', resetSleepTimer);
+        
+        document.addEventListener('mousemove', resetSleepTimer);
+        document.addEventListener('touchstart', resetSleepTimer);
+
+        // Улучшенный акселерометр
+        let motionPermissionGranted = false;
+        function requestMotionAccess() {
+            if (motionPermissionGranted) return;
+            if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+                DeviceMotionEvent.requestPermission().then(state => {
+                    if(state === 'granted') {
+                        window.addEventListener('devicemotion', handleMotion);
+                        motionPermissionGranted = true;
+                    }
+                }).catch(console.error);
+            } else {
+                window.addEventListener('devicemotion', handleMotion);
+                motionPermissionGranted = true;
+            }
+        }
+
+        let lastUpdate = 0;
+        let lastX = 0, lastY = 0, lastZ = 0;
+        function handleMotion(e) {
+            if(sleepTimerDuration === 0) return;
+            let acc = e.accelerationIncludingGravity || e.acceleration; 
+            if(!acc || acc.x === null) return;
+            
+            let curTime = Date.now();
+            if ((curTime - lastUpdate) > 100) {
+                let diffTime = (curTime - lastUpdate);
+                lastUpdate = curTime;
+                
+                let x = acc.x; let y = acc.y; let z = acc.z;
+                let speed = Math.abs(x + y + z - lastX - lastY - lastZ) / diffTime * 10000;
+                
+                if (speed > 15) { // Порог встряхивания
+                    resetSleepTimer();
+                }
+                lastX = x; lastY = y; lastZ = z;
+            }
+        }
+
+        function toggleTimerModal(show) { 
+            UI.timerModal.classList.toggle('active', show); 
+            if(show) requestMotionAccess(); 
+        }
+
+        // Скорость воспроизведения
+        function updateSpeed(val) {
+            settings.speed = parseFloat(val);
+            audioEl.playbackRate = settings.speed;
+            UI.speedVal.textContent = settings.speed.toFixed(1) + "x";
+            UI.playbackSpeed.value = settings.speed;
+            saveSettings();
+        }
+        UI.playbackSpeed.addEventListener('input', (e) => updateSpeed(e.target.value));
+        function resetSpeed() { updateSpeed(1.0); }
+
+        function loadSettings() {
+            const saved = localStorage.getItem('webamp_settings');
+            if (saved) settings = { ...settings, ...JSON.parse(saved) };
+            if (!settings.visMode) settings.visMode = 'bars'; 
+            if (!settings.speed) settings.speed = 1.0;
+
+            UI.volume.value = settings.vol; UI.volVal.textContent = settings.vol + "%"; 
+            if (masterGain) masterGain.gain.value = settings.vol / 100;
+
+            UI.pan.value = settings.pan; UI.panVal.textContent = settings.pan == 0 ? "C" : (settings.pan < 0 ? `L${Math.abs(settings.pan)}` : `R${settings.pan}`);
+            
+            updateSpeed(settings.speed);
+
+            if (settings.shuffle) toggleShuffle(true);
+            repeatMode = settings.repeat; updateRepeatUI();
+        }
+
+        function saveSettings() { localStorage.setItem('webamp_settings', JSON.stringify(settings)); }
+
+        function savePlaybackState() {
+            if (playlist[currentIndex]) {
+                settings.lastTrackPath = playlist[currentIndex].webkitRelativePath || playlist[currentIndex].name;
+                settings.lastPosition = audioEl.currentTime;
+                saveSettings();
+            }
+        }
+
+        function toggleVisMode() { settings.visMode = settings.visMode === 'bars' ? 'wave' : 'bars'; saveSettings(); }
+        UI.canvasL.addEventListener('click', toggleVisMode); UI.canvasR.addEventListener('click', toggleVisMode);
+
+        function toggleHelpModal(show) { UI.helpModal.classList.toggle('active', show); }
+        function toggleEqModal(show) { UI.eqModal.classList.toggle('active', show); }
+
+        function buildEqUI() {
+            UI.eqBoard.innerHTML = '';
+            eqFrequencies.forEach((freq, i) => {
+                const band = document.createElement('div'); band.className = 'eq-band';
+                const slider = document.createElement('input');
+                slider.type = 'range'; slider.className = 'eq-slider'; slider.min = -12; slider.max = 12; slider.value = settings.eq[i];
+                slider.setAttribute('orient', 'vertical'); 
+                slider.addEventListener('input', (e) => {
+                    settings.eq[i] = parseFloat(e.target.value);
+                    if (eqNodes[i]) eqNodes[i].gain.value = settings.eq[i];
+                    saveSettings();
+                });
+                const label = document.createElement('div'); label.className = 'eq-label'; label.textContent = eqLabels[i];
+                band.appendChild(slider); band.appendChild(label); UI.eqBoard.appendChild(band);
+            });
+        }
+
+        function resetEQ() {
+            settings.eq = [0,0,0,0,0,0,0,0,0,0];
+            const sliders = document.querySelectorAll('.eq-slider');
+            sliders.forEach((sl, i) => { sl.value = 0; if (eqNodes[i]) eqNodes[i].gain.value = 0; });
+            saveSettings();
+        }
+
+        function initAudioEngine() {
+            if (audioInitialized) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            source = audioCtx.createMediaElementSource(audioEl);
+            
+            masterGain = audioCtx.createGain(); masterGain.gain.value = settings.vol / 100;
+            panner = audioCtx.createStereoPanner(); panner.pan.value = settings.pan / 100;
+            
+            let prevNode = source;
+            eqFrequencies.forEach((freq, i) => {
+                let filter = audioCtx.createBiquadFilter();
+                filter.type = 'peaking'; filter.frequency.value = freq; filter.Q.value = 1.41; filter.gain.value = settings.eq[i];
+                prevNode.connect(filter); prevNode = filter; eqNodes.push(filter);
+            });
+
+            prevNode.connect(panner);
+
+            splitter = audioCtx.createChannelSplitter(2);
+            analyserL = audioCtx.createAnalyser(); analyserR = audioCtx.createAnalyser();
+            
+            analyserL.fftSize = 1024; analyserR.fftSize = 1024;
+            analyserL.smoothingTimeConstant = 0.45; analyserR.smoothingTimeConstant = 0.45;
+            analyserL.minDecibels = -90; analyserL.maxDecibels = -25;
+            analyserR.minDecibels = -90; analyserR.maxDecibels = -25;
+
+            dataL = new Uint8Array(analyserL.frequencyBinCount); dataR = new Uint8Array(analyserR.frequencyBinCount);
+
+            panner.connect(splitter); 
+            splitter.connect(analyserL, 0); splitter.connect(analyserR, 1);
+            panner.connect(masterGain); 
+            masterGain.connect(audioCtx.destination);
+
+            audioInitialized = true; drawOscilloscope();
+        }
+
+        UI.folderInput.addEventListener('change', (event) => {
+            let files = Array.from(event.target.files);
+            files = files.filter(file => validExtensions.includes(file.name.split('.').pop().toLowerCase()));
+            files.sort((a, b) => (a.webkitRelativePath || a.name).localeCompare((b.webkitRelativePath || b.name), undefined, { numeric: true, sensitivity: 'base' }));
+
+            playlist = files; UI.fileCountBadge.textContent = `${playlist.length} FILES LOADED`;
+            playedHistory = []; renderPlaylist();
+
+            if (playlist.length > 0) {
+                let startIdx = 0; let startPos = 0;
+                if (settings.lastTrackPath) {
+                    const foundIdx = playlist.findIndex(f => (f.webkitRelativePath || f.name) === settings.lastTrackPath);
+                    if (foundIdx !== -1) { startIdx = foundIdx; startPos = settings.lastPosition; }
+                }
+                loadTrack(startIdx, startPos);
+            } else {
+                UI.playlistUI.innerHTML = '<div style="color:red; font-size:11px; text-align:center; margin-top:30px;">Аудиофайлы не найдены.</div>';
+            }
+            event.target.value = '';
+        });
+
+        function clearPlaylist() {
+            stopTrack(); playlist = []; playedHistory = []; currentIndex = -1;
+            settings.lastTrackPath = ""; settings.lastPosition = 0; saveSettings();
+            
+            UI.fileCountBadge.textContent = `0 FILES LOADED`; UI.trackTitle.textContent = "NO TAPE LOADED...";
+            UI.trackTitle.classList.remove('marquee'); UI.timeCurrent.textContent = "00:00"; 
+            UI.timeTotal.textContent = "/ 00:00"; UI.progressBar.value = 0;
+            UI.playlistUI.innerHTML = '<div style="color: #444; font-size: 11px; text-align: center; margin-top: 30px;">Плейлист очищен. Нажмите "⏏"</div>';
+            UI.folderInput.value = '';
+        }
+
+        function renderPlaylist() {
+            UI.playlistUI.innerHTML = '';
+            playlist.forEach((file, index) => {
+                const item = document.createElement('div');
+                item.className = 'playlist-item'; item.textContent = `${index + 1}. ${file.name}`;
+                item.onclick = () => { playedHistory.push(currentIndex); loadTrack(index, 0); playTrack(); };
+                UI.playlistUI.appendChild(item);
+            });
+        }
+
+        function checkTitleScroll() {
+            UI.trackTitle.classList.remove('marquee');
+            setTimeout(() => { if (UI.trackTitle.scrollWidth > UI.trackTitle.parentElement.clientWidth) UI.trackTitle.classList.add('marquee'); }, 50);
+        }
+
+        function loadTrack(index, startPosition = 0) {
+            currentIndex = index; const file = playlist[index];
+            audioEl.src = URL.createObjectURL(file);
+            UI.trackTitle.textContent = file.name.toUpperCase();
+            checkTitleScroll();
+            
+            audioEl.addEventListener('loadedmetadata', function onMeta() {
+                if (startPosition > 0 && startPosition < audioEl.duration) audioEl.currentTime = startPosition;
+                audioEl.playbackRate = settings.speed; 
+                audioEl.removeEventListener('loadedmetadata', onMeta);
+            });
+
+            const items = document.querySelectorAll('.playlist-item');
+            items.forEach(el => el.classList.remove('playing'));
+            if(items[index]) { items[index].classList.add('playing'); items[index].scrollIntoView({ behavior: "smooth", block: "nearest" }); }
+            
+            savePlaybackState();
+        }
+
+        function togglePlay() {
+            if (playlist.length === 0) return;
+            if (!audioInitialized) initAudioEngine();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            if (isPlaying) { audioEl.pause(); } else { audioEl.play(); }
+        }
+
+        function playTrack() {
+            if (!audioInitialized) initAudioEngine();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            audioEl.play();
+        }
+        function stopTrack() { audioEl.pause(); audioEl.currentTime = 0; savePlaybackState(); }
+
+        let repeatMode = 1; 
+        function updateRepeatUI() {
+            UI.btnRepeat.classList.remove('active-toggle');
+            if (repeatMode === 0) UI.btnRepeat.innerHTML = '➡ OFF';
+            else if (repeatMode === 1) { UI.btnRepeat.innerHTML = '🔁 ALL'; UI.btnRepeat.classList.add('active-toggle'); }
+            else { UI.btnRepeat.innerHTML = '🔂 ONE'; UI.btnRepeat.classList.add('active-toggle'); }
+        }
+        function toggleRepeat() { repeatMode = (repeatMode + 1) % 3; settings.repeat = repeatMode; saveSettings(); updateRepeatUI(); }
+        function toggleShuffle(forceSet) { settings.shuffle = forceSet !== undefined ? forceSet : !settings.shuffle; UI.btnShuffle.classList.toggle('active-toggle', settings.shuffle); if (!settings.shuffle) playedHistory = []; saveSettings(); }
+
+        function nextTrack() {
+            if (playlist.length === 0) return; let next;
+            if (settings.shuffle) { playedHistory.push(currentIndex); next = Math.floor(Math.random() * playlist.length); } 
+            else { next = currentIndex + 1; if (next >= playlist.length) { if (repeatMode === 0) { stopTrack(); return; } next = 0; } }
+            loadTrack(next, 0); playTrack();
+        }
+
+        function prevTrack() {
+            if (playlist.length === 0) return; let prev;
+            if (settings.shuffle && playedHistory.length > 0) prev = playedHistory.pop();
+            else { prev = currentIndex - 1; if (prev < 0) prev = playlist.length - 1; }
+            loadTrack(prev, 0); playTrack();
+        }
+
+        audioEl.addEventListener('play', () => { isPlaying = true; UI.btnPlay.innerHTML = '⏸'; UI.btnPlay.classList.add('active-toggle'); audioEl.playbackRate = settings.speed;});
+        audioEl.addEventListener('pause', () => { isPlaying = false; UI.btnPlay.innerHTML = '▶'; UI.btnPlay.classList.remove('active-toggle'); savePlaybackState(); });
+        audioEl.addEventListener('ended', () => { if (repeatMode === 2) { audioEl.currentTime = 0; audioEl.play(); } else nextTrack(); });
+
+        function formatTime(sec) { if (isNaN(sec)) return "00:00"; return `${Math.floor(sec/60).toString().padStart(2,'0')}:${Math.floor(sec%60).toString().padStart(2,'0')}`; }
+        
+        audioEl.addEventListener('timeupdate', () => {
+            UI.timeCurrent.textContent = formatTime(audioEl.currentTime);
+            if (!isDraggingProgress && audioEl.duration) UI.progressBar.value = (audioEl.currentTime / audioEl.duration) * 100;
+            if (Math.abs(audioEl.currentTime - lastAutoSaveTime) > 5) { savePlaybackState(); lastAutoSaveTime = audioEl.currentTime; }
+        });
+        
+        audioEl.addEventListener('loadedmetadata', () => { UI.timeTotal.textContent = "/ " + formatTime(audioEl.duration); });
+        UI.progressBar.addEventListener('input', () => { isDraggingProgress = true; });
+        UI.progressBar.addEventListener('change', () => { if (audioEl.duration) audioEl.currentTime = (UI.progressBar.value / 100) * audioEl.duration; isDraggingProgress = false; savePlaybackState(); });
+
+        UI.volume.addEventListener('input', (e) => { 
+            settings.vol = e.target.value; 
+            if(masterGain) masterGain.gain.value = settings.vol / 100; 
+            UI.volVal.textContent = settings.vol + "%"; 
+            saveSettings(); 
+        });
+        UI.pan.addEventListener('input', (e) => { settings.pan = e.target.value; if(panner) panner.pan.value = settings.pan / 100; UI.panVal.textContent = settings.pan == 0 ? "C" : (settings.pan < 0 ? `L${Math.abs(settings.pan)}` : `R${settings.pan}`); saveSettings(); });
+
+        let peaksL = new Array(14).fill(0); let peaksR = new Array(14).fill(0);
+        let holdsL = new Array(14).fill(0); let holdsR = new Array(14).fill(0);
+        const HOLD_FRAMES = 15; 
+        const PEAK_FALL = 0.025; 
+        
+        const bandLimits = [1, 2, 4, 6, 9, 14, 21, 30, 42, 60, 85, 120, 170, 240, 350];
+        const brickColors = ['#00aa00', '#00ff00', '#88ff00', '#ffff00', '#ffaa00', '#ff5500', '#ff2200', '#ff0000'];
+
+        function drawGrid(ctx, w, h, isWave) { 
+            ctx.fillStyle = '#011105'; ctx.fillRect(0, 0, w, h); 
+            if(isWave) { ctx.strokeStyle = '#003311'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, h/2); ctx.lineTo(w, h/2); ctx.stroke(); }
+        }
+
+        function drawOscilloscope() {
+            requestAnimationFrame(drawOscilloscope);
+            const w = UI.canvasL.width; const h = UI.canvasL.height;
+            const isWave = (settings.visMode === 'wave');
+            
+            drawGrid(ctxL, w, h, isWave); drawGrid(ctxR, w, h, isWave);
+            
+            if (!isPlaying || !audioInitialized) return;
+
+            if (isWave) {
+                analyserL.getByteTimeDomainData(dataL); analyserR.getByteTimeDomainData(dataR);
+                function drawWave(ctx, data) {
+                    ctx.beginPath(); ctx.strokeStyle = '#00ff66'; ctx.lineWidth = 1.5;
+                    const sliceWidth = w / data.length; let x = 0;
+                    for (let i = 0; i < data.length; i++) {
+                        const y = ((data[i] / 128.0) * h) / 2;
+                        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                        x += sliceWidth;
+                    }
+                    ctx.stroke();
+                }
+                drawWave(ctxL, dataL); drawWave(ctxR, dataR);
+            } else {
+                analyserL.getByteFrequencyData(dataL); analyserR.getByteFrequencyData(dataR);
+                
+                function drawBars(ctx, data, peaks, holds) {
+                    const barCount = 14; const barW = 4; const gap = 1; const maxBricks = 8;
+                    for (let i = 0; i < barCount; i++) {
+                        let maxVal = 0;
+                        for (let j = bandLimits[i]; j < bandLimits[i+1]; j++) { if (data[j] > maxVal) maxVal = data[j]; }
+
+                        let val = maxVal / 255.0; 
+                        val = val * (1 + i * 0.02); 
+                        if (val > 1) val = 1;
+
+                        if (val >= peaks[i]) {
+                            peaks[i] = val; holds[i] = HOLD_FRAMES;
+                        } else {
+                            if (holds[i] > 0) holds[i]--;
+                            else { peaks[i] -= PEAK_FALL; if (peaks[i] < 0) peaks[i] = 0; }
+                        }
+
+                        let litBricks = Math.round(val * maxBricks);
+                        if (litBricks > maxBricks) litBricks = maxBricks;
+                        let x = i * (barW + gap);
+
+                        for (let b = 0; b < litBricks; b++) {
+                            ctx.fillStyle = brickColors[b];
+                            let y = h - (b * 3) - 2;
+                            ctx.fillRect(x, y, barW, 2);
+                        }
+
+                        let pBrick = Math.round(peaks[i] * maxBricks);
+                        if (pBrick > maxBricks) pBrick = maxBricks;
+                        if (pBrick > 0) {
+                            let bIdx = pBrick - 1; 
+                            ctx.fillStyle = brickColors[bIdx]; 
+                            let y = h - (bIdx * 3) - 2;
+                            ctx.fillRect(x, y, barW, 2);
+                        }
+                    }
+                }
+                drawBars(ctxL, dataL, peaksL, holdsL); 
+                drawBars(ctxR, dataR, peaksR, holdsR);
+            }
+        }
+
+        drawGrid(ctxL, UI.canvasL.width, UI.canvasL.height, true); 
+        drawGrid(ctxR, UI.canvasR.width, UI.canvasR.height, true);
+        loadSettings(); buildEqUI();
+    </script>
+        </body>
+</html>

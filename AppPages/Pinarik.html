@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Приложение: Пинарик Генератор</title>
+    <!-- Шрифты удалены -->
+    <style>
+        :root {
+            --bg-body: #0a0b0d;
+            --bg-panel: linear-gradient(145deg, #2b2e33, #1a1c1f);
+            --bg-card: #1e2026;
+            --border-dark: #333;
+            --border-light: rgba(255, 255, 255, 0.05);
+            --text-main: #e0e0e0;
+            --text-muted: #88929b;
+            --accent-cyan: #00ddff;
+            --accent-green: #00ff66;
+            --accent-orange: #ffaa00;
+            --accent-purple: #7f5af0;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --radius-sm: 6px;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        header {
+            background: var(--bg-panel);
+            border: 3px solid var(--border-dark);
+            border-radius: var(--radius-lg);
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6), inset 0 0 15px var(--border-light);
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 22px;
+            color: var(--accent-cyan);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-weight: 900;
+            text-shadow: 0 0 10px rgba(0, 221, 255, 0.3);
+        }
+
+        .badge-link {
+            font-size: 13px;
+            background: rgba(0, 221, 255, 0.1);
+            color: var(--accent-cyan);
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--accent-cyan);
+            text-decoration: none;
+            font-weight: 700;
+            transition: all 0.2s;
+        }
+
+        .badge-link:hover {
+            background: var(--accent-cyan);
+            color: #000;
+            box-shadow: 0 0 15px rgba(0, 221, 255, 0.4);
+        }
+
+        .section-panel {
+            background: var(--bg-panel);
+            border: 3px solid var(--border-dark);
+            border-radius: var(--radius-lg);
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.7), inset 0 0 15px var(--border-light);
+        }
+
+        .section-title {
+            margin: 0 0 20px 0;
+            font-size: 24px;
+            color: var(--accent-green);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-bottom: 2px solid var(--border-dark);
+            padding-bottom: 15px;
+            font-weight: 900;
+            text-shadow: 0 0 10px rgba(0, 255, 102, 0.3);
+        }
+
+        .preview-container {
+            width: 100%;
+            background: #000;
+            border: 3px solid var(--border-dark);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            text-align: center;
+        }
+
+        .preview-img {
+            width: 100%;
+            max-height: 450px;
+            object-fit: cover;
+            object-position: top;
+            display: block;
+        }
+
+        .info-block {
+            margin-bottom: 25px;
+            background: rgba(0,0,0,0.2);
+            padding: 20px;
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+
+        .info-block h3 {
+            margin: 0 0 12px 0;
+            font-size: 18px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .info-block p, .info-block ul {
+            color: var(--text-muted);
+            line-height: 1.6;
+            font-size: 15px;
+            margin: 0;
+        }
+
+        .info-block ul { padding-left: 20px; }
+        .info-block li { margin-bottom: 8px; }
+
+        .btn-launch {
+            display: block;
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, var(--accent-green), #00b347);
+            color: #000;
+            text-align: center;
+            font-size: 18px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-decoration: none;
+            border-radius: var(--radius-md);
+            box-shadow: 0 0 25px rgba(0, 255, 102, 0.4);
+            transition: all 0.2s;
+            margin-top: 10px;
+        }
+
+        .btn-launch:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0 35px rgba(0, 255, 102, 0.7);
+            background: linear-gradient(135deg, #26ff80, var(--accent-green));
+        }
+    
+        .offline-text { font-size: 14px; line-height: 1.5; color: #e0e0e0; }
+        .offline-btn {
+            background: #00ff66;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 800;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 13px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .offline-btn:hover {
+            box-shadow: 0 0 15px rgba(0, 255, 102, 0.4);
+            transform: translateY(-2px);
+        }
+            .action-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 25px;
+        }
+
+        .btn-launch {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--accent-green), #00b347);
+            color: #000;
+            text-align: center;
+            font-size: 16px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-decoration: none;
+            border-radius: var(--radius-md);
+            box-shadow: 0 0 20px rgba(0, 255, 102, 0.3);
+            transition: all 0.2s;
+            box-sizing: border-box;
+        }
+
+        .btn-launch:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px rgba(0, 255, 102, 0.6);
+            background: linear-gradient(135deg, #26ff80, var(--accent-green));
+        }
+
+        .btn-offline-download {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            background: rgba(0, 221, 255, 0.1);
+            color: var(--accent-cyan);
+            border: 2px solid var(--accent-cyan);
+            text-align: center;
+            font-size: 15px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-decoration: none;
+            border-radius: var(--radius-md);
+            transition: all 0.2s;
+            box-sizing: border-box;
+        }
+
+        .btn-offline-download:hover {
+            background: var(--accent-cyan);
+            color: #000;
+            box-shadow: 0 0 20px rgba(0, 221, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .offline-hint {
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>SYS::APPS PLATFORM</h1>
+        <a href="../index.html" class="badge-link">◀ НАЗАД В КАТАЛОГ</a>
+    </header>
+
+    <div class="section-panel">
+        <h2 class="section-title">📅 Пинарик Генератор — Календарь Мотивации</h2>
+
+        <!-- Превью интерфейса приложения -->
+        <div class="preview-container">
+            <img src="screenshots/Pinarik.png" alt="Превью Пинарик Генератор" class="preview-img" onerror="this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'800\' height=\'400\'><rect width=\'100%\' height=\'100%\' fill=\'%23111\'/><text x=\'50%\' y=\'50%\' fill=\'%2300ff66\' font-size=\'24\' text-anchor=\'middle\'>📅 Превью приложения Пинарик Генератор</text></svg>'">
+        </div>
+        
+        <div class="info-block">
+            <h3 style="color: var(--accent-cyan);">💡 Для чего нужно это приложение?</h3>
+            <p>
+                <b>Пинарик</b> — это наглядная карта человеческой жизни и эффективный инструмент самомотивации (название происходит от слова «пинать» — подталкивать не терять время). 
+                <br><br>
+                Генератор создает персональную сетку всех месяцев жизни человека на основе даты рождения. Главное открытие плаката — <b>вся человеческая жизнь легко помещается на один обычный лист формата А4</b>. Это помогает наглядно ощутить ценность времени в любом возрасте.
+            </p>
+        </div>
+
+        <div class="info-block">
+            <h3 style="color: var(--accent-orange);">✨ Как этим пользоваться?</h3>
+            <ul>
+                <li><b>Индивидуальный расчет:</b> Введите дату рождения, и приложение сформирует персональную сетку лет и месяцев.</li>
+                <li><b>Печать на А4:</b> Распечатайте полученный плакат на принтере и повесьте на видное место.</li>
+                <li><b>Ручной учет (Ритуал):</b> В конце каждого месяца вручную закрашивайте прожитый месяц маркером или ручкой. Ощущение уходящего времени мотивирует не откладывать главные цели на потом.</li>
+            </ul>
+        </div>
+
+                <div class="action-group">
+            <a href="../apps/Pinarik.html" class="btn-launch">▶ ЗАПУСТИТЬ В БРАУЗЕРЕ</a>
+            <a href="data:text/html;charset=utf-8;base64,PCFET0NUWVBFIGh0bWw+DQo8aHRtbCBsYW5nPSJydSI+DQo8aGVhZD4NCiAgICA8bWV0YSBjaGFyc2V0PSJVVEYtOCI+DQogICAgPHRpdGxlPtCa0LDQu9C10L3QtNCw0YDRjCDQttC40LfQvdC4ICgxMDgwINC80LXRgdGP0YbQtdCyKTwvdGl0bGU+DQogICAgPHN0eWxlPg0KICAgICAgICAvKiDQltC10YHRgtC60L4g0LfQsNC00LDQtdC8INGA0LDQt9C80LXRgCDQsdGD0LzQsNCz0Lgg0LTQu9GPIFBERi/Qn9C10YfQsNGC0LggKi8NCiAgICAgICAgQHBhZ2Ugew0KICAgICAgICAgICAgc2l6ZTogQTQgcG9ydHJhaXQ7DQogICAgICAgICAgICBtYXJnaW46IDAgIWltcG9ydGFudDsgDQogICAgICAgIH0NCg0KICAgICAgICAvKiDQndCw0YHRgtGA0L7QudC60Lgg0Y3QutGA0LDQvdCwICovDQogICAgICAgIGJvZHkgew0KICAgICAgICAgICAgZGlzcGxheTogZmxleDsNCiAgICAgICAgICAgIGp1c3RpZnktY29udGVudDogY2VudGVyOw0KICAgICAgICAgICAgYWxpZ24taXRlbXM6IGNlbnRlcjsNCiAgICAgICAgICAgIG1pbi1oZWlnaHQ6IDEwMHZoOw0KICAgICAgICAgICAgbWFyZ2luOiAwOw0KICAgICAgICAgICAgYmFja2dyb3VuZC1jb2xvcjogIzUyNTY1OTsNCiAgICAgICAgICAgIGZvbnQtZmFtaWx5OiBBcmlhbCwgc2Fucy1zZXJpZjsNCiAgICAgICAgICAgIC13ZWJraXQtcHJpbnQtY29sb3ItYWRqdXN0OiBleGFjdCAhaW1wb3J0YW50Ow0KICAgICAgICAgICAgcHJpbnQtY29sb3ItYWRqdXN0OiBleGFjdCAhaW1wb3J0YW50Ow0KICAgICAgICAgICAgY29sb3ItYWRqdXN0OiBleGFjdCAhaW1wb3J0YW50Ow0KICAgICAgICB9DQoNCiAgICAgICAgLyogLS0tLS0g0J7QutC90L4g0LLQstC+0LTQsCDQvdCw0YfQsNC70YzQvdC+0Lkg0LTQsNGC0YsgLS0tLS0gKi8NCiAgICAgICAgI3NldHVwLW1lbnUgew0KICAgICAgICAgICAgYmFja2dyb3VuZDogI2ZmZmZmZjsNCiAgICAgICAgICAgIHBhZGRpbmc6IDQwcHg7DQogICAgICAgICAgICBib3JkZXItcmFkaXVzOiAxMnB4Ow0KICAgICAgICAgICAgYm94LXNoYWRvdzogMCAxMHB4IDMwcHggcmdiYSgwLDAsMCwwLjMpOw0KICAgICAgICAgICAgdGV4dC1hbGlnbjogY2VudGVyOw0KICAgICAgICAgICAgd2lkdGg6IDMwMHB4Ow0KICAgICAgICB9DQogICAgICAgICNzZXR1cC1tZW51IGgyIHsNCiAgICAgICAgICAgIG1hcmdpbi10b3A6IDA7DQogICAgICAgICAgICBjb2xvcjogIzMzMzsNCiAgICAgICAgICAgIGZvbnQtc2l6ZTogMjJweDsNCiAgICAgICAgfQ0KICAgICAgICAuZm9ybS1ncm91cCB7DQogICAgICAgICAgICBtYXJnaW4tYm90dG9tOiAyMHB4Ow0KICAgICAgICAgICAgdGV4dC1hbGlnbjogbGVmdDsNCiAgICAgICAgfQ0KICAgICAgICAuZm9ybS1ncm91cCBsYWJlbCB7DQogICAgICAgICAgICBkaXNwbGF5OiBibG9jazsNCiAgICAgICAgICAgIG1hcmdpbi1ib3R0b206IDhweDsNCiAgICAgICAgICAgIGZvbnQtd2VpZ2h0OiBib2xkOw0KICAgICAgICAgICAgY29sb3I6ICM1NTU7DQogICAgICAgICAgICBmb250LXNpemU6IDE0cHg7DQogICAgICAgIH0NCiAgICAgICAgLmZvcm0tZ3JvdXAgc2VsZWN0LCAuZm9ybS1ncm91cCBpbnB1dCB7DQogICAgICAgICAgICB3aWR0aDogMTAwJTsNCiAgICAgICAgICAgIHBhZGRpbmc6IDEwcHg7DQogICAgICAgICAgICBib3JkZXI6IDFweCBzb2xpZCAjY2NjOw0KICAgICAgICAgICAgYm9yZGVyLXJhZGl1czogNnB4Ow0KICAgICAgICAgICAgYm94LXNpemluZzogYm9yZGVyLWJveDsNCiAgICAgICAgICAgIGZvbnQtc2l6ZTogMTZweDsNCiAgICAgICAgfQ0KICAgICAgICAjYnRuLXN0YXJ0IHsNCiAgICAgICAgICAgIGJhY2tncm91bmQ6ICM0Q0FGNTA7DQogICAgICAgICAgICBjb2xvcjogd2hpdGU7DQogICAgICAgICAgICBib3JkZXI6IG5vbmU7DQogICAgICAgICAgICBwYWRkaW5nOiAxNXB4Ow0KICAgICAgICAgICAgZm9udC1zaXplOiAxNnB4Ow0KICAgICAgICAgICAgYm9yZGVyLXJhZGl1czogNnB4Ow0KICAgICAgICAgICAgY3Vyc29yOiBwb2ludGVyOw0KICAgICAgICAgICAgd2lkdGg6IDEwMCU7DQogICAgICAgICAgICBmb250LXdlaWdodDogYm9sZDsNCiAgICAgICAgICAgIHRyYW5zaXRpb246IGJhY2tncm91bmQgMC4zczsNCiAgICAgICAgfQ0KICAgICAgICAjYnRuLXN0YXJ0OmhvdmVyIHsNCiAgICAgICAgICAgIGJhY2tncm91bmQ6ICM0NWEwNDk7DQogICAgICAgIH0NCg0KICAgICAgICAvKiAtLS0tLSDQm9C40YHRgiDQkDQg0YEg0LrQsNC70LXQvdC00LDRgNC10LwgLS0tLS0gKi8NCiAgICAgICAgI2NhbGVuZGFyLXBhZ2Ugew0KICAgICAgICAgICAgd2lkdGg6IDIxMG1tOw0KICAgICAgICAgICAgaGVpZ2h0OiAyOTdtbTsNCiAgICAgICAgICAgIG1heC1oZWlnaHQ6IDI5N21tOw0KICAgICAgICAgICAgYmFja2dyb3VuZDogI2ZmZmZmZjsNCiAgICAgICAgICAgIGJveC1zaGFkb3c6IDAgMCAxNXB4IHJnYmEoMCwwLDAsMC41KTsNCiAgICAgICAgICAgIHBhZGRpbmc6IDEwbW07IA0KICAgICAgICAgICAgYm94LXNpemluZzogYm9yZGVyLWJveDsNCiAgICAgICAgICAgIGRpc3BsYXk6IG5vbmU7IC8qINCh0LrRgNGL0YIg0LTQviDQvdCw0LbQsNGC0LjRjyDQutC90L7Qv9C60LggKi8NCiAgICAgICAgICAgIGZsZXgtZGlyZWN0aW9uOiBjb2x1bW47DQogICAgICAgICAgICBwb3NpdGlvbjogcmVsYXRpdmU7DQogICAgICAgICAgICBvdmVyZmxvdzogaGlkZGVuOw0KICAgICAgICAgICAgcGFnZS1icmVhay1hZnRlcjogYXZvaWQ7DQogICAgICAgICAgICBwYWdlLWJyZWFrLWluc2lkZTogYXZvaWQ7DQogICAgICAgIH0NCg0KICAgICAgICAvKiDQodC10YLQutCwINGC0LDQsdC70LjRhtGLICovDQogICAgICAgIC5ncmlkIHsNCiAgICAgICAgICAgIGZsZXgtZ3JvdzogMTsNCiAgICAgICAgICAgIGRpc3BsYXk6IGdyaWQ7DQogICAgICAgICAgICBncmlkLXRlbXBsYXRlLWNvbHVtbnM6IHJlcGVhdCgyNCwgMWZyKTsNCiAgICAgICAgICAgIGdyaWQtdGVtcGxhdGUtcm93czogcmVwZWF0KDQ1LCAxZnIpOw0KICAgICAgICAgICAgYm9yZGVyLXRvcDogMXB4IHNvbGlkICMzMzM7DQogICAgICAgICAgICBib3JkZXItbGVmdDogMXB4IHNvbGlkICMzMzM7DQogICAgICAgICAgICBoZWlnaHQ6IDEwMCU7DQogICAgICAgIH0NCg0KICAgICAgICAvKiDQndCw0YHRgtGA0L7QudC60Lgg0LrQsNC20LTQvtC5INC60LvQtdGC0LrQuCAqLw0KICAgICAgICAuY2VsbCB7DQogICAgICAgICAgICBib3JkZXItYm90dG9tOiAxcHggc29saWQgIzMzMzsNCiAgICAgICAgICAgIGJvcmRlci1yaWdodDogMXB4IHNvbGlkICMzMzM7DQogICAgICAgICAgICBkaXNwbGF5OiBmbGV4Ow0KICAgICAgICAgICAganVzdGlmeS1jb250ZW50OiBjZW50ZXI7DQogICAgICAgICAgICBhbGlnbi1pdGVtczogY2VudGVyOw0KICAgICAgICAgICAgZm9udC1zaXplOiA4cHg7DQogICAgICAgICAgICBjb2xvcjogIzAwMDsgLyog0KHQtNC10LvQsNC7INGC0LXQutGB0YIg0LzQtdGB0Y/RhtC10LIg0YfQuNGB0YLQviDRh9C10YDQvdGL0Lwg0LTQu9GPINC60L7QvdGC0YDQsNGB0YLQsCAqLw0KICAgICAgICAgICAgcG9zaXRpb246IHJlbGF0aXZlOw0KICAgICAgICAgICAgZm9udC1mYW1pbHk6ICdBcmlhbCBOYXJyb3cnLCBBcmlhbCwgc2Fucy1zZXJpZjsNCiAgICAgICAgfQ0KDQogICAgICAgIC8qINCh0JXQoNCQ0K8g0JfQkNCb0JjQktCa0JAg0J/QoNCe0JbQmNCi0KvQpSDQnNCV0KHQr9Cm0JXQkiAo0YHQtNC10LvQsNC7INGC0LXQvNC90LXQtSDQtNC70Y8g0L/RgNC40L3RgtC10YDQsCkgKi8NCiAgICAgICAgLmNlbGwuZmlsbGVkIHsNCiAgICAgICAgICAgIGJhY2tncm91bmQtY29sb3I6ICNiM2IzYjM7IC8qINCR0YvQu9C+ICNlNmU2ZTYsINGC0LXQv9C10YDRjCDQsdC+0LvQtdC1INC/0LvQvtGC0L3Ri9C5INGB0LXRgNGL0LkgKi8NCiAgICAgICAgfQ0KDQogICAgICAgIC8qINCi0LXQutGB0YIg0LzQtdGB0Y/RhtCwICovDQogICAgICAgIC5tb250aC10ZXh0IHsNCiAgICAgICAgICAgIHBvc2l0aW9uOiByZWxhdGl2ZTsNCiAgICAgICAgICAgIHotaW5kZXg6IDIwOyANCiAgICAgICAgfQ0KDQogICAgICAgIC8qINCa0KDQo9Cf0J3Qq9CVINCT0J7QlNCrINCd0JAg0KTQntCd0JUgKNGB0LTQtdC70LDQuyDRgtC10LzQvdC10LUg0LTQu9GPINC/0YDQuNC90YLQtdGA0LApICovDQogICAgICAgIC5iZy15ZWFyIHsNCiAgICAgICAgICAgIHBvc2l0aW9uOiBhYnNvbHV0ZTsNCiAgICAgICAgICAgIHRvcDogNTAlOw0KICAgICAgICAgICAgbGVmdDogNTAlOw0KICAgICAgICAgICAgdHJhbnNmb3JtOiB0cmFuc2xhdGUoLTUwJSwgLTUwJSk7DQogICAgICAgICAgICBmb250LXNpemU6IDQ0cHg7DQogICAgICAgICAgICBmb250LXdlaWdodDogOTAwOw0KICAgICAgICAgICAgY29sb3I6IHJnYmEoMCwgMCwgMCwgMC40KTsgLyog0JHRi9C70L4gMC4xNSAoMTUlKSwg0YHRgtCw0LvQviAwLjQgKDQwJSDRh9C10YDQvdC+0LPQvikgKi8NCiAgICAgICAgICAgIHotaW5kZXg6IDEwOw0KICAgICAgICAgICAgcG9pbnRlci1ldmVudHM6IG5vbmU7DQogICAgICAgICAgICBsZXR0ZXItc3BhY2luZzogMnB4Ow0KICAgICAgICAgICAgd2lkdGg6IDA7IGhlaWdodDogMDsgbGluZS1oZWlnaHQ6IDA7DQogICAgICAgICAgICBkaXNwbGF5OiBmbGV4OyBqdXN0aWZ5LWNvbnRlbnQ6IGNlbnRlcjsgYWxpZ24taXRlbXM6IGNlbnRlcjsgd2hpdGUtc3BhY2U6IG5vd3JhcDsNCiAgICAgICAgICAgIGZvbnQtZmFtaWx5OiAnQXJpYWwgTmFycm93JywgQXJpYWwsIHNhbnMtc2VyaWY7DQogICAgICAgIH0NCg0KICAgICAgICAvKiDQodC/0LXRhtC40LDQu9GM0L3Ri9C1INC90LDRgdGC0YDQvtC50LrQuCDQv9GA0Lgg0L/QtdGH0LDRgtC4IChDdHJsK1ApICovDQogICAgICAgIEBtZWRpYSBwcmludCB7DQogICAgICAgICAgICBib2R5IHsgYmFja2dyb3VuZDogbm9uZTsgbWluLWhlaWdodDogYXV0bzsgYWxpZ24taXRlbXM6IGZsZXgtc3RhcnQ7IH0NCiAgICAgICAgICAgICNzZXR1cC1tZW51IHsgZGlzcGxheTogbm9uZSAhaW1wb3J0YW50OyB9IA0KICAgICAgICAgICAgI2NhbGVuZGFyLXBhZ2UgeyBkaXNwbGF5OiBmbGV4ICFpbXBvcnRhbnQ7IGJveC1zaGFkb3c6IG5vbmU7IG1hcmdpbjogMDsgfQ0KICAgICAgICB9DQogICAgCiAgICAgICAgLm9mZmxpbmUtdGV4dCB7IGZvbnQtc2l6ZTogMTRweDsgbGluZS1oZWlnaHQ6IDEuNTsgY29sb3I6ICNlMGUwZTA7IH0KICAgICAgICAub2ZmbGluZS1idG4gewogICAgICAgICAgICBiYWNrZ3JvdW5kOiAjMDBmZjY2OwogICAgICAgICAgICBjb2xvcjogIzAwMDsKICAgICAgICAgICAgYm9yZGVyOiBub25lOwogICAgICAgICAgICBwYWRkaW5nOiAxMHB4IDIwcHg7CiAgICAgICAgICAgIGJvcmRlci1yYWRpdXM6IDZweDsKICAgICAgICAgICAgZm9udC13ZWlnaHQ6IDgwMDsKICAgICAgICAgICAgY3Vyc29yOiBwb2ludGVyOwogICAgICAgICAgICB0ZXh0LXRyYW5zZm9ybTogdXBwZXJjYXNlOwogICAgICAgICAgICBmb250LXNpemU6IDEzcHg7CiAgICAgICAgICAgIHRyYW5zaXRpb246IGFsbCAwLjJzOwogICAgICAgICAgICB3aGl0ZS1zcGFjZTogbm93cmFwOwogICAgICAgIH0KICAgICAgICAub2ZmbGluZS1idG46aG92ZXIgewogICAgICAgICAgICBib3gtc2hhZG93OiAwIDAgMTVweCByZ2JhKDAsIDI1NSwgMTAyLCAwLjQpOwogICAgICAgICAgICB0cmFuc2Zvcm06IHRyYW5zbGF0ZVkoLTJweCk7CiAgICAgICAgfQogICAgPC9zdHlsZT4NCjwvaGVhZD4NCjxib2R5Pg0KDQogICAgPCEtLSDQodGC0LDRgNGC0L7QstC+0LUg0L7QutC90L4gKNCc0LXQvdGOKSAtLT4NCiAgICA8ZGl2IGlkPSJzZXR1cC1tZW51Ij4NCiAgICAgICAgPGgyPtCS0YvQsdC+0YAg0LzQtdGB0Y/RhtCwINGA0L7QttC00LXQvdC40Y88L2gyPg0KICAgICAgICANCiAgICAgICAgPGRpdiBjbGFzcz0iZm9ybS1ncm91cCI+DQogICAgICAgICAgICA8bGFiZWw+0JzQtdGB0Y/RhiDRgdGC0LDRgNGC0LA6PC9sYWJlbD4NCiAgICAgICAgICAgIDxzZWxlY3QgaWQ9ImlucHV0LW1vbnRoIj4NCiAgICAgICAgICAgICAgICA8b3B0aW9uIHZhbHVlPSIwIiBzZWxlY3RlZD7Qr9C90LLQsNGA0Yw8L29wdGlvbj4NCiAgICAgICAgICAgICAgICA8b3B0aW9uIHZhbHVlPSIxIj7QpNC10LLRgNCw0LvRjDwvb3B0aW9uPg0KICAgICAgICAgICAgICAgIDxvcHRpb24gdmFsdWU9IjIiPtCc0LDRgNGCPC9vcHRpb24+DQogICAgICAgICAgICAgICAgPG9wdGlvbiB2YWx1ZT0iMyI+0JDQv9GA0LXQu9GMPC9vcHRpb24+DQogICAgICAgICAgICAgICAgPG9wdGlvbiB2YWx1ZT0iNCI+0JzQsNC5PC9vcHRpb24+DQogICAgICAgICAgICAgICAgPG9wdGlvbiB2YWx1ZT0iNSI+0JjRjtC90Yw8L29wdGlvbj4NCiAgICAgICAgICAgICAgICA8b3B0aW9uIHZhbHVlPSI2Ij7QmNGO0LvRjDwvb3B0aW9uPg0KICAgICAgICAgICAgICAgIDxvcHRpb24gdmFsdWU9IjciPtCQ0LLQs9GD0YHRgjwvb3B0aW9uPg0KICAgICAgICAgICAgICAgIDxvcHRpb24gdmFsdWU9IjgiPtCh0LXQvdGC0Y/QsdGA0Yw8L29wdGlvbj4NCiAgICAgICAgICAgICAgICA8b3B0aW9uIHZhbHVlPSI5Ij7QntC60YLRj9Cx0YDRjDwvb3B0aW9uPg0KICAgICAgICAgICAgICAgIDxvcHRpb24gdmFsdWU9IjEwIj7QndC+0Y/QsdGA0Yw8L29wdGlvbj4NCiAgICAgICAgICAgICAgICA8b3B0aW9uIHZhbHVlPSIxMSI+0JTQtdC60LDQsdGA0Yw8L29wdGlvbj4NCiAgICAgICAgICAgIDwvc2VsZWN0Pg0KICAgICAgICA8L2Rpdj4NCg0KICAgICAgICA8ZGl2IGNsYXNzPSJmb3JtLWdyb3VwIj4NCiAgICAgICAgICAgIDxsYWJlbD7Qk9C+0LQg0YHRgtCw0YDRgtCwOjwvbGFiZWw+DQogICAgICAgICAgICA8aW5wdXQgdHlwZT0ibnVtYmVyIiBpZD0iaW5wdXQteWVhciIgdmFsdWU9IjE5NjAiIG1pbj0iMTkwMCIgbWF4PSIyMTAwIj4NCiAgICAgICAgPC9kaXY+DQoNCiAgICAgICAgPGJ1dHRvbiBpZD0iYnRuLXN0YXJ0Ij7QodC+0LfQtNCw0YLRjCDQutCw0LvQtdC90LTQsNGA0Yw8L2J1dHRvbj4NCiAgICA8L2Rpdj4NCg0KICAgIDwhLS0g0KHQsNC8INC70LjRgdGCINCQNCDRgSDRgtCw0LHQu9C40YbQtdC5IC0tPg0KICAgIDxkaXYgaWQ9ImNhbGVuZGFyLXBhZ2UiPg0KICAgICAgICA8ZGl2IGNsYXNzPSJncmlkIiBpZD0iY2FsZW5kYXItZ3JpZCI+PC9kaXY+DQogICAgPC9kaXY+DQoNCiAgICA8c2NyaXB0Pg0KICAgICAgICBkb2N1bWVudC5hZGRFdmVudExpc3RlbmVyKCJET01Db250ZW50TG9hZGVkIiwgKCkgPT4gew0KICAgICAgICAgICAgY29uc3QgYnRuU3RhcnQgPSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgiYnRuLXN0YXJ0Iik7DQogICAgICAgICAgICBjb25zdCBzZXR1cE1lbnUgPSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgic2V0dXAtbWVudSIpOw0KICAgICAgICAgICAgY29uc3QgY2FsZW5kYXJQYWdlID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoImNhbGVuZGFyLXBhZ2UiKTsNCiAgICAgICAgICAgIGNvbnN0IGdyaWQgPSBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgiY2FsZW5kYXItZ3JpZCIpOw0KICAgICAgICAgICAgDQogICAgICAgICAgICBjb25zdCBtb250aHNOYW1lcyA9IFsn0K/QvdCyJywgJ9Ck0LXQsicsICfQnNCw0YAnLCAn0JDQv9GAJywgJ9Cc0LDQuScsICfQmNGO0L0nLCAn0JjRjtC7JywgJ9CQ0LLQsycsICfQodC10L0nLCAn0J7QutGCJywgJ9Cd0L7RjycsICfQlNC10LonXTsNCiAgICAgICAgICAgIGNvbnN0IHRvdGFsQ2VsbHMgPSAxMDgwOyAvLyA5MCDQu9C10YIgKiAxMiDQvNC10YHRj9GG0LXQsg0KDQogICAgICAgICAgICBidG5TdGFydC5hZGRFdmVudExpc3RlbmVyKCJjbGljayIsICgpID0+IHsNCiAgICAgICAgICAgICAgICBjb25zdCBzdGFydE1vbnRoID0gcGFyc2VJbnQoZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoImlucHV0LW1vbnRoIikudmFsdWUpOw0KICAgICAgICAgICAgICAgIGNvbnN0IHN0YXJ0WWVhciA9IHBhcnNlSW50KGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCJpbnB1dC15ZWFyIikudmFsdWUpOw0KDQogICAgICAgICAgICAgICAgY29uc3Qgbm93ID0gbmV3IERhdGUoKTsNCiAgICAgICAgICAgICAgICBjb25zdCByZWFsQ3VycmVudE1vbnRoID0gbm93LmdldE1vbnRoKCk7IA0KICAgICAgICAgICAgICAgIGNvbnN0IHJlYWxDdXJyZW50WWVhciA9IG5vdy5nZXRGdWxsWWVhcigpOyANCg0KICAgICAgICAgICAgICAgIHNldHVwTWVudS5zdHlsZS5kaXNwbGF5ID0gIm5vbmUiOw0KICAgICAgICAgICAgICAgIGNhbGVuZGFyUGFnZS5zdHlsZS5kaXNwbGF5ID0gImZsZXgiOw0KICAgICAgICAgICAgICAgIGdyaWQuaW5uZXJIVE1MID0gIiI7IA0KDQogICAgICAgICAgICAgICAgbGV0IGN1cnJlbnRNb250aCA9IHN0YXJ0TW9udGg7DQogICAgICAgICAgICAgICAgbGV0IGN1cnJlbnRZZWFyID0gc3RhcnRZZWFyOw0KDQogICAgICAgICAgICAgICAgZm9yIChsZXQgaSA9IDA7IGkgPCB0b3RhbENlbGxzOyBpKyspIHsNCiAgICAgICAgICAgICAgICAgICAgY29uc3QgY2VsbCA9IGRvY3VtZW50LmNyZWF0ZUVsZW1lbnQoImRpdiIpOw0KICAgICAgICAgICAgICAgICAgICBjZWxsLmNsYXNzTmFtZSA9ICJjZWxsIjsNCg0KICAgICAgICAgICAgICAgICAgICBpZiAoY3VycmVudFllYXIgPCByZWFsQ3VycmVudFllYXIgfHwgKGN1cnJlbnRZZWFyID09PSByZWFsQ3VycmVudFllYXIgJiYgY3VycmVudE1vbnRoIDwgcmVhbEN1cnJlbnRNb250aCkpIHsNCiAgICAgICAgICAgICAgICAgICAgICAgIGNlbGwuY2xhc3NMaXN0LmFkZCgiZmlsbGVkIik7DQogICAgICAgICAgICAgICAgICAgIH0NCg0KICAgICAgICAgICAgICAgICAgICBjb25zdCBtb250aFRleHQgPSBkb2N1bWVudC5jcmVhdGVFbGVtZW50KCJzcGFuIik7DQogICAgICAgICAgICAgICAgICAgIG1vbnRoVGV4dC5jbGFzc05hbWUgPSAibW9udGgtdGV4dCI7DQogICAgICAgICAgICAgICAgICAgIG1vbnRoVGV4dC50ZXh0Q29udGVudCA9IG1vbnRoc05hbWVzW2N1cnJlbnRNb250aF07DQogICAgICAgICAgICAgICAgICAgIGNlbGwuYXBwZW5kQ2hpbGQobW9udGhUZXh0KTsNCg0KICAgICAgICAgICAgICAgICAgICBpZiAoY3VycmVudE1vbnRoID09PSAwIHx8IGkgPT09IDApIHsNCiAgICAgICAgICAgICAgICAgICAgICAgIGNvbnN0IGJnWWVhciA9IGRvY3VtZW50LmNyZWF0ZUVsZW1lbnQoImRpdiIpOw0KICAgICAgICAgICAgICAgICAgICAgICAgYmdZZWFyLmNsYXNzTmFtZSA9ICJiZy15ZWFyIjsNCiAgICAgICAgICAgICAgICAgICAgICAgIGJnWWVhci50ZXh0Q29udGVudCA9IGN1cnJlbnRZZWFyOw0KICAgICAgICAgICAgICAgICAgICAgICAgY2VsbC5hcHBlbmRDaGlsZChiZ1llYXIpOw0KICAgICAgICAgICAgICAgICAgICB9DQoNCiAgICAgICAgICAgICAgICAgICAgZ3JpZC5hcHBlbmRDaGlsZChjZWxsKTsNCg0KICAgICAgICAgICAgICAgICAgICBjdXJyZW50TW9udGgrKzsNCiAgICAgICAgICAgICAgICAgICAgaWYgKGN1cnJlbnRNb250aCA+IDExKSB7DQogICAgICAgICAgICAgICAgICAgICAgICBjdXJyZW50TW9udGggPSAwOw0KICAgICAgICAgICAgICAgICAgICAgICAgY3VycmVudFllYXIrKzsNCiAgICAgICAgICAgICAgICAgICAgfQ0KICAgICAgICAgICAgICAgIH0NCiAgICAgICAgICAgIH0pOw0KICAgICAgICB9KTsNCiAgICA8L3NjcmlwdD4NCg0KICAgICAgICA8L2JvZHk+DQo8L2h0bWw+" download="Pinarik.html" class="btn-offline-download">📥 СКАЧАТЬ ДЛЯ ОФФЛАЙН (.HTML)</a>
+            <div class="offline-hint">🌐 Приложение работает автономно без интернета (например, в самолёте)</div>
+        </div>
+    </div>
+</div>
+
+        </body>
+</html>

@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Утилита: Сортировка Изображений (SORT_img)</title>
+    <!-- Шрифты удалены -->
+    <style>
+        :root {
+            --bg-body: #0a0b0d;
+            --bg-panel: linear-gradient(145deg, #2b2e33, #1a1c1f);
+            --bg-card: #1e2026;
+            --border-dark: #333;
+            --border-light: rgba(255, 255, 255, 0.05);
+            --text-main: #e0e0e0;
+            --text-muted: #88929b;
+            --accent-cyan: #00ddff;
+            --accent-green: #00ff66;
+            --accent-orange: #ffaa00;
+            --accent-purple: #7f5af0;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --radius-sm: 6px;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        header {
+            background: var(--bg-panel);
+            border: 3px solid var(--border-dark);
+            border-radius: var(--radius-lg);
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6), inset 0 0 15px var(--border-light);
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 22px;
+            color: var(--accent-cyan);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-weight: 900;
+            text-shadow: 0 0 10px rgba(0, 221, 255, 0.3);
+        }
+
+        .badge-link {
+            font-size: 13px;
+            background: rgba(0, 221, 255, 0.1);
+            color: var(--accent-cyan);
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--accent-cyan);
+            text-decoration: none;
+            font-weight: 700;
+            transition: all 0.2s;
+        }
+
+        .badge-link:hover {
+            background: var(--accent-cyan);
+            color: #000;
+            box-shadow: 0 0 15px rgba(0, 221, 255, 0.4);
+        }
+
+        .section-panel {
+            background: var(--bg-panel);
+            border: 3px solid var(--border-dark);
+            border-radius: var(--radius-lg);
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.7), inset 0 0 15px var(--border-light);
+        }
+
+        .section-title {
+            margin: 0 0 20px 0;
+            font-size: 20px;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-bottom: 2px solid var(--border-dark);
+            padding-bottom: 15px;
+            font-weight: 900;
+        }
+
+        .info-block {
+            margin-bottom: 25px;
+            background: rgba(0,0,0,0.2);
+            padding: 18px;
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+
+        .info-block h3 {
+            margin: 0 0 12px 0;
+            font-size: 17px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .info-block p, .info-block ol, .info-block ul {
+            color: var(--text-muted);
+            line-height: 1.6;
+            font-size: 15px;
+            margin: 0;
+        }
+
+        .info-block ol, .info-block ul { padding-left: 20px; }
+        .info-block li { margin-bottom: 10px; }
+
+        .faq-box {
+            background: rgba(127, 90, 240, 0.08);
+            border: 2px dashed var(--accent-purple);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .faq-box h3 {
+            color: var(--accent-purple);
+            margin: 0 0 10px 0;
+            font-size: 17px;
+        }
+
+        .version-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .ver-btn {
+            background: var(--bg-card);
+            border: 2px solid var(--border-dark);
+            color: var(--text-muted);
+            padding: 12px 20px;
+            border-radius: var(--radius-md);
+            font-family: inherit;
+            font-weight: 800;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .ver-btn:hover {
+            border-color: var(--accent-orange);
+            color: #fff;
+        }
+
+        .ver-btn.active {
+            background: rgba(255, 170, 0, 0.15);
+            border-color: var(--accent-orange);
+            color: var(--accent-orange);
+            box-shadow: 0 0 15px rgba(255, 170, 0, 0.2);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: var(--radius-sm);
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+            font-size: 14px;
+        }
+
+        .btn-download {
+            background: rgba(0, 221, 255, 0.1);
+            color: var(--accent-cyan);
+            border-color: var(--accent-cyan);
+        }
+        .btn-download:hover {
+            background: var(--accent-cyan);
+            color: #000;
+            box-shadow: 0 0 15px rgba(0, 221, 255, 0.4);
+        }
+
+        .btn-copy {
+            background: rgba(0, 255, 102, 0.1);
+            color: var(--accent-green);
+            border-color: var(--accent-green);
+        }
+        .btn-copy:hover {
+            background: var(--accent-green);
+            color: #000;
+            box-shadow: 0 0 15px rgba(0, 255, 102, 0.4);
+        }
+
+        .code-container {
+            background: #0d0e12;
+            border: 2px solid var(--border-dark);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            max-height: 500px;
+            overflow: auto;
+            position: relative;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        .code-container::-webkit-scrollbar { width: 10px; height: 10px; }
+        .code-container::-webkit-scrollbar-track { background: #111; }
+        .code-container::-webkit-scrollbar-thumb { background: #333; border-radius: 5px; border: 2px solid #111; }
+        .code-container::-webkit-scrollbar-thumb:hover { background: var(--accent-cyan); }
+
+        pre {
+            margin: 0;
+            color: #ccc;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            tab-size: 4;
+        }
+
+        code {
+            background: #252830;
+            color: var(--accent-cyan);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+    
+        .offline-text { font-size: 14px; line-height: 1.5; color: #e0e0e0; }
+        .offline-btn {
+            background: #00ff66;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 800;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 13px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .offline-btn:hover {
+            box-shadow: 0 0 15px rgba(0, 255, 102, 0.4);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>SYS::APPS PLATFORM</h1>
+        <a href="../../index.html" class="badge-link">◀ НАЗАД В КАТАЛОГ</a>
+    </header>
+
+    <div class="section-panel">
+        <h2 class="section-title">🖼️ Утилита: Умная Сортировка Фото и Видео (SORT_img)</h2>
+        
+        <!-- Ликбез для новичков -->
+        <div class="faq-box">
+            <h3>💡 Какую проблему решает этот скрипт?</h3>
+            <p>
+                Представьте, что у вас на компьютере или телефоне накопились тысячи фотографий и видео за несколько лет. Все они свалены в одну кучу с непонятными именами вроде <code>IMG_20210515_123.jpg</code> или <code>PHOTO-984.jpg</code>. Разбирать их вручную по папкам можно неделями!
+                <br><br>
+                <b>Скрипт SORT_img</b> делает эту работу за вас за пару минут. Он буквально «заглядывает внутрь» каждого фото (в скрытые данные камеры — EXIF) и узнает точный день и время съемки. Затем он аккуратно создает папки по годам и дням (например, <code>2023 / 2023-05-15</code>) и красиво переименовывает файлы!
+            </p>
+        </div>
+
+        <div class="info-block">
+            <h3 style="color: var(--accent-cyan);">⚙️ Особенности и фишки:</h3>
+            <ul>
+                <li><b>Автоматическая установка ExifTool:</b> Для чтения точной даты фото нужна спец-программа ExifTool. Если ее у вас нет — скрипт сам предложит установить ее одной кнопкой!</li>
+                <li><b>Защита от сбоев:</b> Если файлов слишком много и вы случайно закроете окно, скрипт запомнит прогресс и при следующем запуске продолжит с того же места.</li>
+                <li><b>Удаление мусора в именах:</b> Очищает повторные даты в названиях файлов (например, превращает корявое <code>2020-01-01_20200101_photo.jpg</code> в чистое <code>2020-01-01_photo.jpg</code>).</li>
+            </ul>
+        </div>
+
+        <div class="info-block">
+            <h3 style="color: var(--accent-orange);">Выберите режим сортировки:</h3>
+            <div class="version-selector">
+                <button class="ver-btn active" id="btnV16" onclick="setVersion('v16')">
+                    v16 (ALL_FOLDERS) — Искать фото ВО ВСЕХ подпапках
+                </button>
+                <button class="ver-btn" id="btnV17" onclick="setVersion('v17')">
+                    v17 (NO_RECURSE) — Искать ТОЛЬКО в текущей папке
+                </button>
+            </div>
+            <p style="font-size: 13px; color: var(--text-muted); margin-top: 8px;">
+                💡 <i>Совет: Если у вас фото раскиданы по куче разных подпапок — выбирайте <b>v16</b>. Если хотите навести порядок строго в одной конкретной папке — выбирайте <b>v17</b>.</i>
+            </p>
+        </div>
+
+        <div class="faq-box" style="border-color: var(--accent-orange); background: rgba(255, 170, 0, 0.08);">
+            <h3 style="color: var(--accent-orange);">💻 Что такое Shell / PowerShell и как запустить скрипт?</h3>
+            <p style="margin-bottom: 12px;">
+                <b>Shell (Командная строка или PowerShell)</b> — это встроенная программа в Windows. В отличие от обычных программ с красивыми кнопочками, здесь компьютеру даются текстовые команды. Запустить наш скрипт очень просто даже без опыта:
+            </p>
+            <ol>
+                <li>Выберите нужную версию выше и скачайте <code>.ps1</code> файл по кнопке <b>«СКАЧАТЬ»</b>.</li>
+                <li>Переместите скачанный файл в папку с фотографиями, где вы хотите навести порядок.</li>
+                <li>Кликните по скачанному скрипту <b>правой кнопкой мыши</b> и выберите <b>«Выполнить с помощью PowerShell»</b>.</li>
+                <li>Наблюдайте за красивым индикатором выполнения!</li>
+            </ol>
+        </div>
+
+        <div class="btn-group">
+            <a id="downloadBtn" href="SORT_img_v16_ALL_FOLDERS.ps1" download class="btn btn-download">📥 СКАЧАТЬ (v16 ALL_FOLDERS)</a>
+            <button id="copyBtn" class="btn btn-copy" onclick="copyCode()">📋 СКОПИРОВАТЬ КОД В КЛИПБОРД</button>
+        </div>
+
+        <div style="margin-bottom: 10px; font-size: 13px; color: var(--text-muted);">
+            Исходный код скрипта (можно просмотреть или скопировать напрямую):
+        </div>
+
+        <div class="code-container">
+            <pre id="codeBlock">Загрузка кода...</pre>
+        </div>
+    </div>
+</div>
+
+<script>
+    const files = {
+        'v16': {
+            name: 'SORT_img_v16_ALL_FOLDERS.ps1',
+            label: 'v16 (ALL_FOLDERS)'
+        },
+        'v17': {
+            name: 'SORT_img_v17_NO_RECURSE.ps1',
+            label: 'v17 (NO_RECURSE)'
+        }
+    };
+
+    let currentVer = 'v16';
+
+    function loadScript(verKey) {
+        const fileInfo = files[verKey];
+        const downloadBtn = document.getElementById('downloadBtn');
+        const codeBlock = document.getElementById('codeBlock');
+
+        downloadBtn.href = fileInfo.name;
+        downloadBtn.innerText = `📥 СКАЧАТЬ (${fileInfo.label})`;
+        codeBlock.textContent = 'Загрузка кода ' + fileInfo.name + '...';
+
+        fetch(fileInfo.name)
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.text();
+            })
+            .then(text => {
+                codeBlock.textContent = text;
+            })
+            .catch(error => {
+                codeBlock.textContent = 
+                    '⚠️ Не удалось загрузить код для предпросмотра.\n\n' +
+                    'Если вы открыли страницу локально (через file://), браузер блокирует загрузку файлов в целях безопасности.\n' +
+                    'Скачайте файл с помощью кнопки выше.';
+            });
+    }
+
+    function setVersion(verKey) {
+        currentVer = verKey;
+        document.getElementById('btnV16').classList.toggle('active', verKey === 'v16');
+        document.getElementById('btnV17').classList.toggle('active', verKey === 'v17');
+        loadScript(verKey);
+    }
+
+    loadScript('v16');
+
+    function copyCode() {
+        const text = document.getElementById('codeBlock').textContent;
+        navigator.clipboard.writeText(text).then(() => {
+            const btn = document.getElementById('copyBtn');
+            const originalText = btn.innerText;
+            btn.innerText = '✅ СКОПИРОВАНО!';
+            btn.style.background = 'var(--accent-green)';
+            btn.style.color = '#000';
+            
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.style.background = 'rgba(0, 255, 102, 0.1)';
+                btn.style.color = 'var(--accent-green)';
+            }, 2000);
+        }).catch(err => {
+            alert('Ошибка копирования: ' + err);
+        });
+    }
+</script>
+
+        </body>
+</html>

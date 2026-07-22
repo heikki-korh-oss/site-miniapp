@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Календарь жизни (1080 месяцев)</title>
+    <style>
+        /* Жестко задаем размер бумаги для PDF/Печати */
+        @page {
+            size: A4 portrait;
+            margin: 0 !important; 
+        }
+
+        /* Настройки экрана */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #525659;
+            font-family: Arial, sans-serif;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+        }
+
+        /* ----- Окно ввода начальной даты ----- */
+        #setup-menu {
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            text-align: center;
+            width: 300px;
+        }
+        #setup-menu h2 {
+            margin-top: 0;
+            color: #333;
+            font-size: 22px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+            font-size: 14px;
+        }
+        .form-group select, .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        #btn-start {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        #btn-start:hover {
+            background: #45a049;
+        }
+
+        /* ----- Лист А4 с календарем ----- */
+        #calendar-page {
+            width: 210mm;
+            height: 297mm;
+            max-height: 297mm;
+            background: #ffffff;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            padding: 10mm; 
+            box-sizing: border-box;
+            display: none; /* Скрыт до нажатия кнопки */
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            page-break-after: avoid;
+            page-break-inside: avoid;
+        }
+
+        /* Сетка таблицы */
+        .grid {
+            flex-grow: 1;
+            display: grid;
+            grid-template-columns: repeat(24, 1fr);
+            grid-template-rows: repeat(45, 1fr);
+            border-top: 1px solid #333;
+            border-left: 1px solid #333;
+            height: 100%;
+        }
+
+        /* Настройки каждой клетки */
+        .cell {
+            border-bottom: 1px solid #333;
+            border-right: 1px solid #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 8px;
+            color: #000; /* Сделал текст месяцев чисто черным для контраста */
+            position: relative;
+            font-family: 'Arial Narrow', Arial, sans-serif;
+        }
+
+        /* СЕРАЯ ЗАЛИВКА ПРОЖИТЫХ МЕСЯЦЕВ (сделал темнее для принтера) */
+        .cell.filled {
+            background-color: #b3b3b3; /* Было #e6e6e6, теперь более плотный серый */
+        }
+
+        /* Текст месяца */
+        .month-text {
+            position: relative;
+            z-index: 20; 
+        }
+
+        /* КРУПНЫЕ ГОДЫ НА ФОНЕ (сделал темнее для принтера) */
+        .bg-year {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 44px;
+            font-weight: 900;
+            color: rgba(0, 0, 0, 0.4); /* Было 0.15 (15%), стало 0.4 (40% черного) */
+            z-index: 10;
+            pointer-events: none;
+            letter-spacing: 2px;
+            width: 0; height: 0; line-height: 0;
+            display: flex; justify-content: center; align-items: center; white-space: nowrap;
+            font-family: 'Arial Narrow', Arial, sans-serif;
+        }
+
+        /* Специальные настройки при печати (Ctrl+P) */
+        @media print {
+            body { background: none; min-height: auto; align-items: flex-start; }
+            #setup-menu { display: none !important; } 
+            #calendar-page { display: flex !important; box-shadow: none; margin: 0; }
+        }
+    
+        .offline-text { font-size: 14px; line-height: 1.5; color: #e0e0e0; }
+        .offline-btn {
+            background: #00ff66;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 800;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 13px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .offline-btn:hover {
+            box-shadow: 0 0 15px rgba(0, 255, 102, 0.4);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Стартовое окно (Меню) -->
+    <div id="setup-menu">
+        <h2>Выбор месяца рождения</h2>
+        
+        <div class="form-group">
+            <label>Месяц старта:</label>
+            <select id="input-month">
+                <option value="0" selected>Январь</option>
+                <option value="1">Февраль</option>
+                <option value="2">Март</option>
+                <option value="3">Апрель</option>
+                <option value="4">Май</option>
+                <option value="5">Июнь</option>
+                <option value="6">Июль</option>
+                <option value="7">Август</option>
+                <option value="8">Сентябрь</option>
+                <option value="9">Октябрь</option>
+                <option value="10">Ноябрь</option>
+                <option value="11">Декабрь</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Год старта:</label>
+            <input type="number" id="input-year" value="1960" min="1900" max="2100">
+        </div>
+
+        <button id="btn-start">Создать календарь</button>
+    </div>
+
+    <!-- Сам лист А4 с таблицей -->
+    <div id="calendar-page">
+        <div class="grid" id="calendar-grid"></div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const btnStart = document.getElementById("btn-start");
+            const setupMenu = document.getElementById("setup-menu");
+            const calendarPage = document.getElementById("calendar-page");
+            const grid = document.getElementById("calendar-grid");
+            
+            const monthsNames = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
+            const totalCells = 1080; // 90 лет * 12 месяцев
+
+            btnStart.addEventListener("click", () => {
+                const startMonth = parseInt(document.getElementById("input-month").value);
+                const startYear = parseInt(document.getElementById("input-year").value);
+
+                const now = new Date();
+                const realCurrentMonth = now.getMonth(); 
+                const realCurrentYear = now.getFullYear(); 
+
+                setupMenu.style.display = "none";
+                calendarPage.style.display = "flex";
+                grid.innerHTML = ""; 
+
+                let currentMonth = startMonth;
+                let currentYear = startYear;
+
+                for (let i = 0; i < totalCells; i++) {
+                    const cell = document.createElement("div");
+                    cell.className = "cell";
+
+                    if (currentYear < realCurrentYear || (currentYear === realCurrentYear && currentMonth < realCurrentMonth)) {
+                        cell.classList.add("filled");
+                    }
+
+                    const monthText = document.createElement("span");
+                    monthText.className = "month-text";
+                    monthText.textContent = monthsNames[currentMonth];
+                    cell.appendChild(monthText);
+
+                    if (currentMonth === 0 || i === 0) {
+                        const bgYear = document.createElement("div");
+                        bgYear.className = "bg-year";
+                        bgYear.textContent = currentYear;
+                        cell.appendChild(bgYear);
+                    }
+
+                    grid.appendChild(cell);
+
+                    currentMonth++;
+                    if (currentMonth > 11) {
+                        currentMonth = 0;
+                        currentYear++;
+                    }
+                }
+            });
+        });
+    </script>
+
+        </body>
+</html>

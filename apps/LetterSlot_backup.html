@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Слот-машина букв - Оффлайн версия</title>
+    <style>
+        :root {
+            --bg-color: #f5f5f4;
+            --text-main: #1c1917;
+            --text-muted: #78716c;
+            --text-light: #a8a29e;
+            --surface: #ffffff;
+            --surface-hover: #fafaf9;
+            --border-color: #292524;
+            --divider-color: #e7e5e4;
+            --btn-main-bg: #1c1917;
+            --btn-main-hover: #292524;
+            --btn-main-text: #ffffff;
+            --winner-color: #059669;
+            --winner-hover: #047857;
+            --gradient-overlay: linear-gradient(to bottom, rgba(231, 229, 228, 0.7), transparent, rgba(231, 229, 228, 0.7));
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #0f0e17;
+            --text-main: #fffffe;
+            --text-muted: #a7a9be;
+            --text-light: #a7a9be;
+            --surface: #1a1932;
+            --surface-hover: #232046;
+            --border-color: rgba(255, 255, 255, 0.15);
+            --divider-color: rgba(255, 255, 255, 0.1);
+            --btn-main-bg: #ff8906;
+            --btn-main-hover: #ffab40;
+            --btn-main-text: #0f0e17;
+            --winner-color: #2cb67d;
+            --winner-hover: #10b981;
+            --gradient-overlay: linear-gradient(to bottom, rgba(26, 25, 50, 0.9), transparent, rgba(26, 25, 50, 0.9));
+            --shadow: rgba(0, 0, 0, 0.4);
+        }
+
+        /* Системные шрифты вместо Google Fonts */
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            background-color: var(--bg-color);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 1rem;
+            color: var(--text-main);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Топ бар для переключателя */
+        .top-bar {
+            width: 100%;
+            max-width: 352px;
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 0.5rem;
+        }
+
+        .theme-btn {
+            background: var(--surface);
+            border: 2px solid var(--border-color);
+            border-radius: 0.5rem;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0.3rem 0.5rem;
+            color: var(--text-main);
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px var(--shadow);
+            outline: none;
+        }
+
+        .theme-btn:hover { 
+            background-color: var(--surface-hover); 
+            transform: translateY(-2px); 
+        }
+
+        /* Контейнер счета */
+        .score-header {
+            width: 100%;
+            max-width: 352px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            background-color: var(--surface);
+            padding: 1rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px var(--shadow);
+            border-bottom: 4px solid var(--border-color);
+            box-sizing: border-box;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        .score-item { text-align: center; }
+        .score-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-light);
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+        .score-value {
+            font-size: 2.25rem;
+            font-weight: 900;
+            margin: 0;
+            color: var(--text-main);
+        }
+        .divider {
+            height: 2rem;
+            width: 1px;
+            background-color: var(--divider-color);
+            margin: 0 0.5rem;
+        }
+
+        /* Заголовки */
+        .title-section { text-align: center; margin-bottom: 2rem; }
+        .title {
+            font-size: 1.875rem;
+            font-weight: 900;
+            margin: 0 0 0.25rem 0;
+            letter-spacing: -0.025em;
+            color: var(--text-main);
+        }
+        .subtitle {
+            font-style: italic;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        /* Слоты */
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+        }
+        .slots-row {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        .slot-box {
+            position: relative;
+            width: 8rem;
+            height: 8rem;
+            background-color: var(--surface);
+            border: 4px solid var(--border-color);
+            border-radius: 1rem;
+            box-shadow: 0 20px 25px -5px var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+        .slot-gradient {
+            position: absolute;
+            inset: 0;
+            background: var(--gradient-overlay);
+            pointer-events: none;
+            z-index: 10;
+        }
+        .letter {
+            font-size: 3.75rem;
+            font-weight: 900;
+            color: var(--text-main);
+        }
+
+        /* Кнопки управления */
+        .controls-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .btn-plus {
+            width: 3.5rem;
+            height: 3.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--surface);
+            border: 2px solid var(--border-color);
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px var(--shadow);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1.25rem;
+            font-weight: 900;
+            color: var(--text-main);
+        }
+        .btn-plus:hover { background-color: var(--surface-hover); }
+        .btn-plus:active { transform: scale(0.95); }
+        .btn-plus:disabled { opacity: 0.2; cursor: not-allowed; }
+
+        .btn-main {
+            position: relative;
+            padding: 1.25rem 2rem;
+            background-color: var(--btn-main-bg);
+            color: var(--btn-main-text);
+            border-radius: 9999px;
+            font-weight: bold;
+            font-size: 1.125rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 10px 25px -5px var(--shadow);
+            min-width: 160px;
+        }
+        .btn-main:hover { background-color: var(--btn-main-hover); transform: translateY(-2px); }
+        .btn-main:active { transform: scale(0.95); }
+        .btn-main.winner { background-color: var(--winner-color); color: #ffffff; }
+        .btn-main.winner:hover { background-color: var(--winner-hover); }
+
+        /* Инфо */
+        .info-section {
+            margin-top: 3rem;
+            color: var(--text-light);
+            font-size: 10px;
+            max-width: 20rem;
+            text-align: center;
+        }
+        .info-section p { margin: 0.25rem 0; }
+
+        /* Анимации */
+        @keyframes slot-spin {
+            0% { transform: translateY(-20px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        .animate-slot { animation: slot-spin 0.1s ease-out; }
+
+        /* Адаптивность для мобильных */
+        @media (min-width: 640px) {
+            .slot-box { width: 10rem; height: 10rem; }
+            .letter { font-size: 4.5rem; }
+            .info-section { font-size: 12px; }
+        }
+
+        .winner-text {
+            color: var(--winner-color);
+            font-weight: 900;
+            font-size: 1.25rem;
+            text-transform: uppercase;
+            letter-spacing: -0.05em;
+        }
+    
+        .offline-text { font-size: 14px; line-height: 1.5; color: #e0e0e0; }
+        .offline-btn {
+            background: #00ff66;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 800;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 13px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .offline-btn:hover {
+            box-shadow: 0 0 15px rgba(0, 255, 102, 0.4);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <button id="themeToggle" class="theme-btn" title="Переключить тему">🌙</button>
+    </div>
+
+    <div class="score-header">
+        <div class="score-item">
+            <p class="score-label">Игрок 1</p>
+            <p id="score1" class="score-value">0</p>
+        </div>
+        <div class="divider"></div>
+        <div class="score-item">
+            <p class="score-label">Игрок 2</p>
+            <p id="score2" class="score-value">0</p>
+        </div>
+    </div>
+
+    <div class="title-section">
+        <h1 class="title" style="font-size: 1.25rem;">Придумайте слово, начинающееся и заканчивающееся на эти буквы.</h1>
+        <p id="status-text" class="subtitle">Игрок, угадавший слово, нажимает +1 со своей стороны экрана</p>
+    </div>
+
+    <div class="game-container">
+        <div class="slots-row">
+            <div class="slot-box">
+                <div class="slot-gradient"></div>
+                <div id="left-letter" class="letter">?</div>
+            </div>
+            <div class="slot-box">
+                <div class="slot-gradient"></div>
+                <div id="right-letter" class="letter">?</div>
+            </div>
+        </div>
+
+        <div class="controls-row">
+            <button id="p1-btn" class="btn-plus" title="Очко Игроку 1">+1</button>
+            <button id="spin-btn" class="btn-main"><span id="btn-text">ИГРАТЬ</span></button>
+            <button id="p2-btn" class="btn-plus" title="Очко Игроку 2">+1</button>
+        </div>
+    </div>
+
+    <div class="info-section">
+        <p>• Начало: без Ь, Ъ, Ы, Й | Конец: без Ё, Ъ</p>
+        <p>• Нажмите +1, если составили слово. Слот обновится сам!</p>
+        <p>• При пропуске хода (кнопка ПРОПУСК) — штраф обоим игрокам.</p>
+    </div>
+
+    <script>
+        const ALPHABET_FULL = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'.split('');
+        const ALPHABET_START = 'АБВГДЕЁЖЗИКЛМНОПРСТУФХЦЧШЩЭЮЯ'.split('');
+        const ALPHABET_END = 'АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЫЬЭЮЯ'.split('');
+
+        const leftEl = document.getElementById('left-letter');
+        const rightEl = document.getElementById('right-letter');
+        const btn = document.getElementById('spin-btn');
+        const btnText = document.getElementById('btn-text');
+        const statusText = document.getElementById('status-text');
+        const score1El = document.getElementById('score1');
+        const score2El = document.getElementById('score2');
+        const p1Btn = document.getElementById('p1-btn');
+        const p2Btn = document.getElementById('p2-btn');
+        const themeToggle = document.getElementById('themeToggle');
+
+        let isSpinning = false;
+        let score1 = 0;
+        let score2 = 0;
+        let winner = null;
+        let canAddPoint = false;
+
+        // Инициализация темы
+        function setTheme(theme) {
+            if (theme === 'dark') {
+                document.body.setAttribute('data-theme', 'dark');
+                themeToggle.textContent = '☀️';
+            } else {
+                document.body.removeAttribute('data-theme');
+                themeToggle.textContent = '🌙';
+            }
+        }
+
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            setTheme(savedTheme);
+        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            setTheme('dark');
+        } else {
+            setTheme('light');
+        }
+
+        themeToggle.addEventListener('click', () => {
+            let newTheme = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            setTheme(newTheme);
+            localStorage.setItem('theme', newTheme);
+        });
+
+        // Механика игры
+        function getRandom(arr) {
+            return arr[Math.floor(Math.random() * arr.length)];
+        }
+
+        async function spinSlot(el, target) {
+            const iterations = 20;
+            const speed = 50;
+            for (let i = 0; i < iterations; i++) {
+                el.textContent = getRandom(ALPHABET_FULL);
+                el.classList.remove('animate-slot');
+                void el.offsetWidth;
+                el.classList.add('animate-slot');
+                await new Promise(r => setTimeout(r, speed + (i * 2)));
+            }
+            el.textContent = target;
+        }
+
+        function updateButtons() {
+            p1Btn.disabled = isSpinning || !!winner || !canAddPoint;
+            p2Btn.disabled = isSpinning || !!winner || !canAddPoint;
+            p1Btn.style.opacity = p1Btn.disabled ? '0.2' : '1';
+            p2Btn.style.opacity = p2Btn.disabled ? '0.2' : '1';
+        }
+
+        function checkWinner() {
+            if (score1 >= 10) {
+                winner = 'Игрок 1';
+            } else if (score2 >= 10) {
+                winner = 'Игрок 2';
+            }
+
+            if (winner) {
+                statusText.textContent = `🎉 ${winner} ВЫИГРАЛ! 🎉`;
+                statusText.classList.add('winner-text');
+                btnText.textContent = 'НОВАЯ ИГРА';
+                btn.classList.add('winner');
+                updateButtons();
+            }
+        }
+
+        function resetGame() {
+            score1 = 0;
+            score2 = 0;
+            winner = null;
+            canAddPoint = false;
+            score1El.textContent = '0';
+            score2El.textContent = '0';
+            leftEl.textContent = '?';
+            rightEl.textContent = '?';
+            statusText.textContent = 'Игрок, угадавший слово, нажимает +1 со своей стороны экрана';
+            statusText.classList.remove('winner-text');
+            btnText.textContent = 'ИГРАТЬ';
+            btn.classList.remove('winner');
+            updateButtons();
+        }
+
+        async function play(isManual = true) {
+            if (winner) {
+                resetGame();
+                return;
+            }
+            if (isSpinning) return;
+            
+            if (isManual && canAddPoint) {
+                score1 = Math.max(0, score1 - 1);
+                score2 = Math.max(0, score2 - 1);
+                score1El.textContent = score1;
+                score2El.textContent = score2;
+            }
+
+            isSpinning = true;
+            canAddPoint = false;
+            updateButtons();
+            
+            btn.style.opacity = '0.5';
+            btnText.textContent = "КРУТИМ...";
+
+            const startLetter = getRandom(ALPHABET_START);
+            const endLetter = getRandom(ALPHABET_END);
+
+            await Promise.all([
+                spinSlot(leftEl, startLetter),
+                new Promise(r => setTimeout(r, 200)).then(() => spinSlot(rightEl, endLetter))
+            ]);
+
+            isSpinning = false;
+            canAddPoint = true;
+            btn.style.opacity = '1';
+            btnText.textContent = "ПРОПУСК";
+            updateButtons();
+        }
+
+        btn.addEventListener('click', () => play(true));
+
+        p1Btn.addEventListener('click', async () => {
+            if (isSpinning || winner || !canAddPoint) return;
+            score1++;
+            score1El.textContent = score1;
+            canAddPoint = false;
+            checkWinner();
+            if (!winner) await play(false);
+        });
+
+        p2Btn.addEventListener('click', async () => {
+            if (isSpinning || winner || !canAddPoint) return;
+            score2++;
+            score2El.textContent = score2;
+            canAddPoint = false;
+            checkWinner();
+            if (!winner) await play(false);
+        });
+        
+        updateButtons();
+
+    </script>
+        </body>
+</html>
