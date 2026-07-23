@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Маятник Арказмей - Интерактивная симуляция</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            margin: 0;
+            padding: 10px;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            min-height: 100vh;
+            box-sizing: border-box;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        h1 {
+            margin-top: 10px;
+            margin-bottom: 5px;
+            font-weight: 300;
+            text-align: center;
+        }
+        #description {
+            max-width: 800px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+            color: #aaa;
+            line-height: 1.5;
+        }
+        #description strong {
+            color: #e0e0e0;
+        }
+        #top-interface {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            width: 100%;
+        }
+        #main-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            width: 100%;
+            max-width: 500px;
+            justify-content: center;
+        }
+        #game-info {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            width: 100%;
+        }
+        #simulation-container {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            width: 100%;
+            flex-wrap: wrap;
+        }
+        canvas {
+            border: 1px solid #444;
+            background-color: #000;
+            max-width: 100%;
+            height: auto;
+            aspect-ratio: 1 / 1;
+            cursor: grab;
+            touch-action: none;
+        }
+        canvas:active {
+            cursor: grabbing;
+        }
+        #controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding: 20px;
+            background-color: #2a2a2a;
+            border-radius: 8px;
+            width: 250px;
+            box-sizing: border-box;
+            flex-shrink: 0;
+        }
+        .control-group { display: flex; flex-direction: column; }
+        .checkbox-group {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 10px;
+        }
+        label { margin-bottom: 5px; font-size: 0.9em; }
+        input[type="range"], select { 
+            width: 100%; padding: 5px; border-radius: 4px;
+            background-color: #333; color: #eee; border: 1px solid #555;
+        }
+        .button-group { display: flex; gap: 10px; }
+        button {
+            padding: 10px 15px; border: none; border-radius: 5px;
+            color: white; font-size: 1em; cursor: pointer;
+            transition: background-color 0.2s; flex-grow: 1;
+        }
+        #toggleButton { background-color: #28a745; }
+        #toggleButton:hover { background-color: #218838; }
+        #resetButton { background-color: #dc3545; }
+        #resetButton:hover { background-color: #c82333; }
+        #toggleArkanoidButton { background-color: #007bff; }
+        #toggleArkanoidButton:hover { background-color: #0056b3; }
+        .score-display {
+            font-size: 1.1em;
+            text-align: center;
+            padding: 8px;
+            background-color: #1a1a1a;
+            border-radius: 5px;
+            min-width: 120px;
+        }
+        .score-display span {
+            font-weight: bold;
+            color: #ffdd00;
+        }
+        
+        @media (max-width: 900px) {
+            #simulation-container { flex-direction: column; }
+            #controls { width: 90%; max-width: 500px; margin-top: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Маятник Арказмей</h1>
+
+    <div id="description">
+        <p>
+            <strong>"Маятник Арказмей"</strong> — это интерактивная физическая песочница и аркадная игра. В её основе лежит тройной маятник, чьё хаотичное движение рождает визуальные узоры и музыкальные аккорды. Каждый шар маятника — это нота, а соотношение их масс создаёт музыкальные гармонии.
+        </p>
+        <p>
+            Включите режим <strong>"Арканоид"</strong>, чтобы добавить в эту систему управляемый шар, платформу и непредсказуемую Змейку. Остерегайтесь змейки — она может атаковать вашу платформу!
+        </p>
+    </div>
+
+    <div id="top-interface">
+        <div id="main-actions">
+             <button id="toggleButton">Запустить симуляцию</button>
+             <button id="resetButton">Сброс</button>
+             <button id="toggleArkanoidButton">Запустить Арканоид</button>
+        </div>
+        <div id="game-info">
+            <div class="score-display">Счёт: <span id="currentScoreDisplay">0</span></div>
+            <div class="score-display">Рекорд: <span id="highScoreDisplay">0</span></div>
+        </div>
+    </div>
+
+    <div id="simulation-container">
+        <canvas id="pendulumCanvas"></canvas>
+        <div id="controls">
+            <h2>Настройки маятника</h2>
+            <div class="control-group">
+                <label for="m1">Масса 1 (кг): <span id="m1_val"></span></label>
+                <input type="range" id="m1" min="1" max="50" value="30" step="1">
+            </div>
+            <div class="control-group">
+                <label for="m2">Масса 2 (кг): <span id="m2_val"></span></label>
+                <input type="range" id="m2" min="1" max="50" value="30" step="1">
+            </div>
+            <div class="control-group">
+                <label for="m3">Масса 3 (кг): <span id="m3_val"></span></label>
+                <input type="range" id="m3" min="1" max="50" value="30" step="1">
+            </div>
+             <div class="control-group">
+                <label for="chordSelect">Аккорд (соотношение масс):</label>
+                <select id="chordSelect">
+                    <option value="custom">Свободный режим</option>
+                    <option value="unison" selected>Унисон</option>
+                    <option value="octave_unison">Унисон + Октава</option>
+                    <option value="fifth_unison">Унисон + Квинта</option>
+                    <option value="power_chord">Power Chord</option>
+                    <option value="major">Мажорный аккорд</option>
+                    <option value="minor">Минорный аккорд</option>
+                </select>
+            </div>
+             <div class="control-group">
+                <label for="gravitySelect">Гравитация:</label>
+                <select id="gravitySelect">
+                    <option value="9.81" selected>Земля</option>
+                    <option value="1.62">Луна</option>
+                    <option value="24.79">Юпитер</option>
+                    <option value="274.0">Солнце</option>
+                </select>
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="spirographToggle" checked>
+                <label for="spirographToggle" style="margin: 0;">Рисовать узор</label>
+            </div>
+            <hr>
+            <h2>Настройки Арканоида</h2>
+             <div class="control-group">
+                <label for="arkBallMass">Масса шара (кг): <span id="arkBallMass_val">40</span></label>
+                <input type="range" id="arkBallMass" min="1" max="100" value="40" step="1">
+            </div>
+        </div>
+    </div>
+
+<script>
+    const canvas = document.getElementById('pendulumCanvas');
+    const ctx = canvas.getContext('2d');
+    const trailCanvas = document.createElement('canvas');
+    const trailCtx = trailCanvas.getContext('2d');
+
+    // --- Константы и параметры ---
+    let g = 9.81;
+    const dt = 1 / 60;
+    const DAMPING_FACTOR = 0.998;
+    const GRAB_RADIUS = 50;
+    const DENSITY_STEEL = 7850;
+    let RADIUS_VISUAL_SCALE = 250;
+    const CONSTRAINT_ITERATIONS = 10;
+    const MAX_SPEED_FOR_AUDIO_MAPPING = 2000;
+    const VOLUME_CEILING = 0.5;
+    const BASE_FREQUENCY_CONSTANT = 4000;
+    const PITCH_SHIFT_SENSITIVITY = 4000;
+    const PLATFORM_BOOST_FACTOR = 1.05;
+    const PLATFORM_SPIN_FACTOR = 5;
+    const SCORE_PER_PLATFORM_HIT = 10;
+    const SCORE_PER_BOB_HIT = 5;
+    const SCORE_PER_SNAKE_SEGMENT = 10;
+    const SCORE_PER_PLATFORM_BITE = -50;
+    const SNAKE_SPEED = 5;
+    let SNAKE_GRID_SIZE = 15;
+    
+    const CHORDS = {
+        custom: null, unison: [30, 30, 30], octave_unison: [20, 20, 40],
+        fifth_unison: [30, 30, 20], power_chord: [30, 20, 15],
+        major: [30, 24, 20], minor: [30, 25, 20],
+    };
+
+    // --- DOM Элементы ---
+    const massSliders = [document.getElementById('m1'), document.getElementById('m2'), document.getElementById('m3')];
+    const massVals = [document.getElementById('m1_val'), document.getElementById('m2_val'), document.getElementById('m3_val')];
+    const toggleButton=document.getElementById('toggleButton');
+    const resetButton=document.getElementById('resetButton');
+    const gravitySelect = document.getElementById('gravitySelect');
+    const chordSelect = document.getElementById('chordSelect');
+    const spirographToggle = document.getElementById('spirographToggle');
+    const toggleArkanoidButton = document.getElementById('toggleArkanoidButton');
+    const arkBallMassSlider = document.getElementById('arkBallMass');
+    const arkBallMassVal = document.getElementById('arkBallMass_val');
+    const currentScoreDisplay = document.getElementById('currentScoreDisplay');
+    const highScoreDisplay = document.getElementById('highScoreDisplay');
+
+    // --- Переменные состояния ---
+    let bobs = [];
+    let lengths = [];
+    let pivot = { x: 0, y: 0 };
+    let arkBall = null;
+    let platform = null;
+    let snake = null;
+    let animationFrameId;
+    let draggedBobIndex = -1;
+    let isDragging = false;
+    let lastMousePos = { x: 0, y: 0 };
+    let isRunning = false;
+    let lastTime = 0;
+    let accumulator = 0;
+    let currentCanvasWidth = 0;
+    let prev_bob_positions = [];
+    let currentScore = 0;
+    let highScore = 0;
+    let isArkanoidActive = false;
+
+    // --- Web Audio API переменные ---
+    let audioCtx;
+    let audioNodes = [];
+    let isAudioInitialized = false;
+
+    // --- Главный цикл (Fixed-step game loop) ---
+    function mainLoop(currentTime) {
+        if (!isRunning) return;
+        if (lastTime === 0) lastTime = currentTime;
+        let deltaTime = (currentTime - lastTime) / 1000;
+        lastTime = currentTime;
+        if (deltaTime > 0.2) deltaTime = 0.2;
+        accumulator += deltaTime;
+        while (accumulator >= dt) {
+            physicsStep();
+            accumulator -= dt;
+        }
+        draw();
+        animationFrameId = requestAnimationFrame(mainLoop);
+    }
+
+    function physicsStep() {
+        if (arkBall) { updateArkBall(); }
+        if (snake) { updateSnake(); }
+        runVerletSimulation();
+        if (isDragging) {
+            bobs[draggedBobIndex].x = lastMousePos.x;
+            bobs[draggedBobIndex].y = lastMousePos.y;
+        }
+        solveConstraints();
+        if (arkBall) { handleCollisions(); }
+        if (isAudioInitialized) { updateAudio(); }
+    }
+
+    // --- Физический движок ---
+    function runVerletSimulation() {
+        const gravityEffect = g * dt * dt * 50;
+        for (const bob of bobs) {
+            const velocityX = (bob.x - bob.prev_x) * DAMPING_FACTOR;
+            const velocityY = (bob.y - bob.prev_y) * DAMPING_FACTOR;
+            bob.prev_x = bob.x;
+            bob.prev_y = bob.y;
+            bob.x += velocityX;
+            bob.y += velocityY;
+            bob.y += gravityEffect;
+        }
+    }
+
+    function solveConstraints() {
+        for (let iter = 0; iter < CONSTRAINT_ITERATIONS; iter++) {
+            let delta = { x: bobs[0].x - pivot.x, y: bobs[0].y - pivot.y };
+            let dist = Math.hypot(delta.x, delta.y);
+            let diff = (dist - lengths[0]) / dist;
+            bobs[0].x -= delta.x * diff;
+            bobs[0].y -= delta.y * diff;
+
+            for (let i = 0; i < bobs.length - 1; i++) {
+                const b1 = bobs[i]; const b2 = bobs[i + 1];
+                delta = { x: b2.x - b1.x, y: b2.y - b1.y };
+                dist = Math.hypot(delta.x, delta.y);
+                if (dist === 0) continue;
+                diff = (dist - lengths[i + 1]) / dist;
+                const totalMass = b1.mass + b2.mass;
+                const weight1 = b2.mass / totalMass;
+                const weight2 = b1.mass / totalMass;
+                b1.x += delta.x * diff * weight1;
+                b1.y += delta.y * diff * weight1;
+                b2.x -= delta.x * diff * weight2;
+                b2.y -= delta.y * diff * weight2;
+            }
+        }
+    }
+
+    // --- Физика Арканоида, Змейки и столкновений ---
+    function updateArkBall() {
+        const vx = arkBall.x - arkBall.prev_x;
+        const vy = arkBall.y - arkBall.prev_y;
+        arkBall.prev_x = arkBall.x;
+        arkBall.prev_y = arkBall.y;
+        arkBall.x += vx;
+        arkBall.y += vy;
+
+        if (arkBall.x < arkBall.radius || arkBall.x > canvas.width - arkBall.radius) {
+            arkBall.x = arkBall.x < arkBall.radius ? arkBall.radius : canvas.width - arkBall.radius;
+            arkBall.prev_x = arkBall.x + vx;
+        }
+        if (arkBall.y < arkBall.radius || arkBall.y > canvas.height - arkBall.radius) {
+             if (arkBall.y < arkBall.radius) {
+                arkBall.y = arkBall.radius;
+                arkBall.prev_y = arkBall.y + vy;
+            } else {
+                playFailSound();
+                arkBall = null; 
+                updateScore(0, true);
+                setTimeout(spawnNewArkBall, 2000);
+                return;
+            }
+        }
+    }
+    
+    function updateSnake() {
+        if (snake.isFalling) {
+            snake.body.forEach(segment => { segment.y += 10; });
+            if (snake.body[0].y > canvas.height) { spawnSnake(); }
+            return;
+        }
+
+        snake.moveCounter++;
+        if (snake.moveCounter >= SNAKE_SPEED) {
+            snake.moveCounter = 0;
+            const head = snake.body[0];
+            const newHead = {
+                x: head.x + snake.direction.x * SNAKE_GRID_SIZE,
+                y: head.y + snake.direction.y * SNAKE_GRID_SIZE
+            };
+
+            if (newHead.x < 0) newHead.x = canvas.width - SNAKE_GRID_SIZE;
+            if (newHead.x >= canvas.width) newHead.x = 0;
+            if (newHead.y < 0) newHead.y = canvas.height - SNAKE_GRID_SIZE;
+            if (newHead.y >= canvas.height) newHead.y = 0;
+
+            snake.body.unshift(newHead);
+            if (!snake.justGrew) { snake.body.pop(); }
+            snake.justGrew = false;
+        }
+
+        if (snake.canGrow) {
+            const head = snake.body[0];
+            const headCenterX = head.x + SNAKE_GRID_SIZE / 2;
+            const headCenterY = head.y + SNAKE_GRID_SIZE / 2;
+
+            for (const bob of bobs) {
+                const bobRadius = getBobRadius(bob.mass);
+                const dist = Math.hypot(headCenterX - bob.x, headCenterY - bob.y);
+                if (dist < bobRadius + SNAKE_GRID_SIZE / 2) {
+                    growSnake();
+                    changeSnakeDirection();
+                    break;
+                }
+            }
+        }
+        
+        // Укус платформы
+        if (snake.canBite && platform) {
+            const head = snake.body[0];
+            if (head.x < platform.x + platform.width &&
+                head.x + SNAKE_GRID_SIZE > platform.x &&
+                head.y < platform.y + platform.height &&
+                head.y + SNAKE_GRID_SIZE > platform.y) {
+                
+                playSnakeBiteSound();
+                updateScore(currentScore + SCORE_PER_PLATFORM_BITE);
+                snake.canBite = false;
+                setTimeout(() => { if (snake) snake.canBite = true; }, 1000);
+            }
+        }
+    }
+    
+    function growSnake() {
+        const tail = snake.body[snake.body.length - 1];
+        snake.body.push({ ...tail });
+        snake.justGrew = true;
+        snake.canGrow = false;
+        setTimeout(() => { if(snake) snake.canGrow = true; }, 500);
+    }
+
+    function changeSnakeDirection() {
+        if (!snake || snake.isFalling) return;
+        const directions = [{x: 1, y: 0}, {x: -1, y: 0}, {x: 0, y: 1}, {x: 0, y: -1}];
+        const validDirections = directions.filter(d => (d.x !== -snake.direction.x || d.y !== -snake.direction.y));
+        snake.direction = validDirections[Math.floor(Math.random() * validDirections.length)];
+    }
+
+    function handleCollisions() {
+        if (snake && !snake.isFalling) {
+            if (!snake.isInvincible) {
+                 for (let i = 1; i < snake.body.length; i++) {
+                    const segment = snake.body[i];
+                    const closestX = Math.max(segment.x, Math.min(arkBall.x, segment.x + SNAKE_GRID_SIZE));
+                    const closestY = Math.max(segment.y, Math.min(arkBall.y, segment.y + SNAKE_GRID_SIZE));
+                    const dist = Math.hypot(arkBall.x - closestX, arkBall.y - closestY);
+
+                    if (dist < arkBall.radius) {
+                        playSnakeHitSound();
+                        if (snake.body.length > 2) { snake.body.pop(); }
+                        const vx = arkBall.x - arkBall.prev_x;
+                        const vy = arkBall.y - arkBall.prev_y;
+                        const segmentCenterX = segment.x + SNAKE_GRID_SIZE / 2;
+                        if (Math.abs(arkBall.x - segmentCenterX) > Math.abs(arkBall.y - (segment.y + SNAKE_GRID_SIZE/2))) {
+                            arkBall.prev_x = arkBall.x + vx;
+                        } else {
+                            arkBall.prev_y = arkBall.y + vy;
+                        }
+                        snake.isInvincible = true;
+                        setTimeout(() => { if (snake) snake.isInvincible = false; }, 200);
+                        return;
+                    }
+                }
+            }
+
+            const head = snake.body[0];
+            const headCenterX = head.x + SNAKE_GRID_SIZE / 2;
+            const headCenterY = head.y + SNAKE_GRID_SIZE / 2;
+            const distHead = Math.hypot(headCenterX - arkBall.x, headCenterY - arkBall.y);
+            if (distHead < arkBall.radius + SNAKE_GRID_SIZE / 2) {
+                playSnakeFallSound();
+                updateScore(currentScore + snake.body.length * SCORE_PER_SNAKE_SEGMENT);
+                arkBall = null;
+                snake.isFalling = true;
+                setTimeout(spawnNewArkBall, 2000);
+                return;
+            }
+        }
+        
+        for (const bob of bobs) {
+            const bobRadius = getBobRadius(bob.mass);
+            const delta = { x: arkBall.x - bob.x, y: arkBall.y - bob.y };
+            const dist = Math.hypot(delta.x, delta.y);
+            const min_dist = arkBall.radius + bobRadius;
+            
+            if (dist < min_dist) {
+                playCollisionSound();
+                updateScore(currentScore + SCORE_PER_BOB_HIT);
+                const overlap = min_dist - dist;
+                const norm = { x: delta.x / dist, y: delta.y / dist };
+                const totalMass = arkBall.mass + bob.mass;
+                const arkBallWeight = bob.mass / totalMass;
+                const bobWeight = arkBall.mass / totalMass;
+                arkBall.x += norm.x * overlap * arkBallWeight;
+                arkBall.y += norm.y * overlap * arkBallWeight;
+                bob.x -= norm.x * overlap * bobWeight;
+                bob.y -= norm.y * overlap * bobWeight;
+                const arkBall_vx = arkBall.x - arkBall.prev_x;
+                const arkBall_vy = arkBall.y - arkBall.prev_y;
+                bob.prev_x -= arkBall_vx * bobWeight * 0.8;
+                bob.prev_y -= arkBall_vy * bobWeight * 0.8;
+            }
+        }
+        
+        if (platform) {
+            const closestX = Math.max(platform.x, Math.min(arkBall.x, platform.x + platform.width));
+            const closestY = Math.max(platform.y, Math.min(arkBall.y, platform.y + platform.height));
+            const dist = Math.hypot(arkBall.x - closestX, arkBall.y - closestY);
+
+            if (dist < arkBall.radius) {
+                const vy = arkBall.y - arkBall.prev_y;
+                if (vy > 0) {
+                    playPlatformHitSound(arkBall.mass);
+                    updateScore(currentScore + SCORE_PER_PLATFORM_HIT);
+                    arkBall.y = platform.y - arkBall.radius;
+                    arkBall.prev_y = arkBall.y + vy * PLATFORM_BOOST_FACTOR;
+                    const hitPos = (arkBall.x - (platform.x + platform.width / 2)) / (platform.width / 2);
+                    const vx = arkBall.x - arkBall.prev_x;
+                    arkBall.prev_x = arkBall.x - (vx + hitPos * PLATFORM_SPIN_FACTOR);
+                }
+            }
+        }
+    }
+    
+    // --- Звуковой движок ---
+    function initAudio() {
+        if (isAudioInitialized) {
+            if (audioCtx && audioCtx.state === 'suspended') { audioCtx.resume(); }
+            return;
+        }
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') { audioCtx.resume(); }
+        for (let i = 0; i < 3; i++) {
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(100, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.start();
+            audioNodes.push({ oscillator, gainNode });
+        }
+        isAudioInitialized = true;
+    }
+
+    function updateAudio() {
+        const speeds = bobs.map(bob => Math.hypot(bob.x - bob.prev_x, bob.y - bob.prev_y) / dt);
+        const averageSpeed = speeds.reduce((sum, speed) => sum + speed, 0) / bobs.length;
+        const pitchMultiplier = 1 + (averageSpeed / PITCH_SHIFT_SENSITIVITY);
+
+        for (let i = 0; i < bobs.length; i++) {
+            const bob = bobs[i];
+            const speed = speeds[i];
+            const normalizedSpeed = Math.min(speed / MAX_SPEED_FOR_AUDIO_MAPPING, 1.0);
+            const volumeRatio = normalizedSpeed * normalizedSpeed;
+            const targetGain = volumeRatio * VOLUME_CEILING;
+            audioNodes[i].gainNode.gain.setTargetAtTime(targetGain, audioCtx.currentTime, 0.01);
+            
+            const baseFreq = BASE_FREQUENCY_CONSTANT / bob.mass;
+            const targetFreq = Math.min(baseFreq * pitchMultiplier, 8000);
+            audioNodes[i].oscillator.frequency.setTargetAtTime(targetFreq, audioCtx.currentTime, 0.01);
+        }
+    }
+
+    function stopAudio() {
+        if (!isAudioInitialized) return;
+        for (const node of audioNodes) {
+            node.gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
+        }
+    }
+    
+    function playSfx(type, freq, duration, gainVal, freqEnd = 0.01) {
+        if (!isAudioInitialized) return;
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, now);
+        osc.frequency.exponentialRampToValueAtTime(freqEnd, now + duration);
+        gain.gain.setValueAtTime(gainVal, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+        osc.start(now);
+        osc.stop(now + duration);
+    }
+
+    function playNoiseSfx(duration, gainVal) {
+        if (!isAudioInitialized) return;
+        const now = audioCtx.currentTime;
+        const bufferSource = audioCtx.createBufferSource();
+        const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate * duration, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < data.length; i++) {
+            data[i] = Math.random() * 2 - 1;
+        }
+        bufferSource.buffer = buffer;
+        
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'highpass';
+        filter.frequency.setValueAtTime(1000, now);
+
+        const gainNode = audioCtx.createGain();
+        bufferSource.connect(filter);
+        filter.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        gainNode.gain.setValueAtTime(gainVal, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, now + duration);
+        
+        bufferSource.start(now);
+        bufferSource.stop(now + duration);
+    }
+    
+    function playPlatformHitSound(mass) { playSfx('sine', 10000 / mass, 0.5, 0.4); }
+    function playCollisionSound() { playSfx('square', 80, 0.1, 0.3); }
+    function playRespawnSound() { playSfx('sine', 1200, 0.2, 0.3, 100); }
+    function playSnakeHitSound() { playSfx('triangle', 400, 0.1, 0.3, 200); }
+    function playSnakeBiteSound() { playSfx('triangle', 600, 0.15, 0.3, 300); }
+    function playSnakeFallSound() { playNoiseSfx(0.7, 0.2); }
+    function playFailSound() {
+        if (!isAudioInitialized) return;
+        for (let i = 0; i < 4; i++) {
+            playSfx('sawtooth', 2000 + Math.random() * 1000, 0.4, 0.2, 100);
+        }
+    }
+
+    // --- Отрисовка ---
+    function getBobRadius(mass) {
+        const volume = mass / DENSITY_STEEL;
+        const radiusMeters = Math.cbrt((3 * volume) / (4 * Math.PI));
+        return radiusMeters * RADIUS_VISUAL_SCALE;
+    }
+
+    function draw() {
+        trailCtx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        trailCtx.fillRect(0, 0, trailCanvas.width, trailCanvas.height);
+        
+        if (spirographToggle.checked) {
+            const colors = ['#ff6b6b', '#4d96ff', '#6bff6b'];
+            for (let i = 0; i < bobs.length; i++) {
+                if (prev_bob_positions[i]) {
+                    trailCtx.beginPath();
+                    trailCtx.moveTo(prev_bob_positions[i].x, prev_bob_positions[i].y);
+                    trailCtx.lineTo(bobs[i].x, bobs[i].y);
+                    trailCtx.strokeStyle = colors[i];
+                    trailCtx.lineWidth = 1;
+                    trailCtx.stroke();
+                }
+            }
+        }
+        for(let i=0; i < bobs.length; i++){
+            prev_bob_positions[i] = {x: bobs[i].x, y: bobs[i].y};
+        }
+
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(trailCanvas, 0, 0);
+        
+        if (snake) {
+            snake.body.forEach((segment, index) => {
+                ctx.fillStyle = index === 0 ? '#ff3b30' : '#0f0';
+                ctx.fillRect(segment.x, segment.y, SNAKE_GRID_SIZE, SNAKE_GRID_SIZE);
+            });
+        }
+
+        if (platform) {
+            ctx.fillStyle = '#cccccc';
+            ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+        }
+
+        if (arkBall) {
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(arkBall.x, arkBall.y, arkBall.radius, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+
+        ctx.strokeStyle = '#999'; ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(pivot.x, pivot.y);
+        for(const bob of bobs) { ctx.lineTo(bob.x, bob.y); }
+        ctx.stroke();
+        
+        const colors = ['#ff6b6b', '#4d96ff', '#6bff6b'];
+        for (let i = 0; i < bobs.length; i++) {
+            const bob = bobs[i];
+            const radius = getBobRadius(bob.mass);
+            ctx.fillStyle = colors[i];
+            ctx.beginPath();
+            ctx.arc(bob.x, bob.y, radius, 0, 2 * Math.PI);
+            ctx.fill();
+            if (i === draggedBobIndex) {
+                ctx.strokeStyle = '#ffdd00'; ctx.lineWidth = 3;
+                ctx.stroke();
+            }
+        }
+        ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(pivot.x, pivot.y, 5, 0, 2 * Math.PI); ctx.fill();
+    }
+    
+    // --- Управление состоянием и события ---
+    function updateScore(newScore, reset = false) {
+        currentScore = reset ? 0 : newScore;
+        currentScoreDisplay.textContent = currentScore;
+        if (currentScore > highScore) {
+            highScore = currentScore;
+            highScoreDisplay.textContent = highScore;
+            localStorage.setItem('pendulumHighScore', highScore);
+        }
+    }
+
+    function updateMassesFromSliders() {
+        const masses = massSliders.map(s => parseFloat(s.value));
+        massVals.forEach((val, i) => val.textContent = masses[i].toFixed(1));
+        bobs.forEach((bob, i) => bob.mass = masses[i]);
+    }
+
+    function updateGravityFromSelect() { g = parseFloat(gravitySelect.value); }
+
+    function resetPositions() {
+        const initialAngle = Math.PI / 1.5;
+        let lastX = pivot.x; let lastY = pivot.y;
+        bobs = [];
+        for(let i=0; i<3; i++){
+            const x = lastX + lengths[i] * Math.sin(initialAngle);
+            const y = lastY + lengths[i] * Math.cos(initialAngle);
+            bobs.push({ x, y, prev_x: x, prev_y: y, mass: 1 });
+        }
+        
+        trailCtx.clearRect(0, 0, trailCanvas.width, trailCanvas.height);
+        prev_bob_positions = bobs.map(bob => ({x: bob.x, y: bob.y}));
+        
+        updateMassesFromSliders();
+        draw();
+    }
+    
+    function setupAndResize() {
+        const controls = document.getElementById('controls');
+        let availableWidth = window.innerWidth - 40;
+        if (window.innerWidth > 900) { availableWidth -= (controls.offsetWidth + 20); }
+        const newSize = Math.min(availableWidth, window.innerHeight * 0.9, 800);
+        if (newSize === currentCanvasWidth) { return; }
+        
+        currentCanvasWidth = newSize;
+        canvas.width = newSize;
+        canvas.height = newSize;
+        trailCanvas.width = newSize;
+        trailCanvas.height = newSize;
+        
+        RADIUS_VISUAL_SCALE = canvas.width / 3.2;
+        SNAKE_GRID_SIZE = canvas.width / 40;
+
+        const L = canvas.height / 5.5;
+        lengths = [L, L, L];
+        pivot = { x: canvas.width / 2, y: canvas.height / 2 - L * 0.5 };
+        
+        if (animationFrameId) cancelAnimationFrame(animationFrameId);
+        isRunning = false;
+        toggleButton.textContent = "Запустить симуляцию";
+        
+        const selectedChord = chordSelect.value;
+        const masses = CHORDS[selectedChord];
+        if(masses) {
+            massSliders.forEach((s, i) => s.value = masses[i]);
+        }
+        
+        stopArkanoid();
+        resetPositions();
+        updateGravityFromSelect();
+        
+        highScore = localStorage.getItem('pendulumHighScore') || 0;
+        highScoreDisplay.textContent = highScore;
+        updateScore(0, true);
+
+        draw();
+    }
+    
+    function getEventCoordinates(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+
+    function handleDragStart(e) {
+        e.preventDefault();
+        initAudio();
+        const coords = getEventCoordinates(e);
+        let minDist = Infinity; let closestBobIndex = -1;
+        for (let i = 0; i < bobs.length; i++) {
+            const dist = Math.hypot(coords.x - bobs[i].x, coords.y - bobs[i].y);
+            if (dist < minDist) { minDist = dist; closestBobIndex = i; }
+        }
+        if (minDist < GRAB_RADIUS) {
+            draggedBobIndex = closestBobIndex;
+            isDragging = true;
+            bobs[draggedBobIndex].prev_x = bobs[draggedBobIndex].x;
+            bobs[draggedBobIndex].prev_y = bobs[draggedBobIndex].y;
+            lastMousePos = coords;
+            prev_bob_positions = bobs.map(bob => ({x: bob.x, y: bob.y}));
+        }
+    }
+
+    function handlePointerMove(e) {
+        if (!isDragging && !platform) return;
+        const coords = getEventCoordinates(e);
+        if (isDragging) {
+            lastMousePos = coords;
+        }
+        if (platform) {
+            const newX = coords.x - platform.width / 2;
+            platform.x = Math.max(0, Math.min(canvas.width - platform.width, newX));
+        }
+    }
+
+    function handleDragEnd(e) {
+        if (!isDragging) return;
+        e.preventDefault();
+        isDragging = false;
+        draggedBobIndex = -1;
+    }
+    
+    // --- Арканоидные функции ---
+    function spawnNewArkBall() {
+        if (!isArkanoidActive) return;
+        playRespawnSound();
+        arkBall = {
+            x: canvas.width / 2, y: 50,
+            prev_x: canvas.width / 2 + (Math.random() - 0.5) * 5,
+            prev_y: 45, mass: parseFloat(arkBallMassSlider.value),
+            radius: getBobRadius(parseFloat(arkBallMassSlider.value))
+        };
+    }
+    
+    function spawnSnake() {
+        const startX = Math.floor(canvas.width / 2 / SNAKE_GRID_SIZE) * SNAKE_GRID_SIZE;
+        const startY = Math.floor(canvas.height / 4 / SNAKE_GRID_SIZE) * SNAKE_GRID_SIZE;
+        const directions = [{x: 1, y: 0}, {x: -1, y: 0}, {x: 0, y: 1}, {x: 0, y: -1}];
+        
+        snake = {
+            body: [{x: startX, y: startY}, {x: startX - SNAKE_GRID_SIZE, y: startY}],
+            direction: directions[Math.floor(Math.random() * directions.length)],
+            moveCounter: 0,
+            canGrow: true,
+            justGrew: false,
+            isFalling: false,
+            isInvincible: false,
+            canBite: true,
+        };
+    }
+
+    function stopArkanoid() {
+        platform = null;
+        arkBall = null;
+        snake = null;
+        isArkanoidActive = false;
+        toggleArkanoidButton.textContent = "Запустить Арканоид";
+    }
+
+    // --- Инициализация и слушатели событий ---
+    window.addEventListener('resize', setupAndResize);
+    
+    toggleButton.addEventListener('click', () => {
+        initAudio();
+        isRunning = !isRunning;
+        if (isRunning) {
+            toggleButton.textContent = "Остановить симуляцию";
+            lastTime = 0; accumulator = 0;
+            animationFrameId = requestAnimationFrame(mainLoop);
+        } else {
+            toggleButton.textContent = "Запустить симуляцию";
+            cancelAnimationFrame(animationFrameId);
+            stopAudio();
+        }
+    });
+
+    resetButton.addEventListener('click', () => {
+        resetPositions();
+        updateScore(0, true);
+        highScore = 0;
+        highScoreDisplay.textContent = highScore;
+        localStorage.removeItem('pendulumHighScore');
+    });
+    
+    spirographToggle.addEventListener('change', () => {
+        if (!spirographToggle.checked) {
+            trailCtx.clearRect(0, 0, trailCanvas.width, trailCanvas.height);
+        }
+    });
+
+    massSliders.forEach(slider => {
+        slider.addEventListener('input', () => {
+            chordSelect.value = 'custom';
+            updateMassesFromSliders();
+        });
+    });
+
+    chordSelect.addEventListener('change', () => {
+        const selectedChord = chordSelect.value;
+        const masses = CHORDS[selectedChord];
+        if (!masses) { return; }
+        massSliders.forEach((s, i) => s.value = masses[i]);
+        updateMassesFromSliders();
+    });
+
+    gravitySelect.addEventListener('change', updateGravityFromSelect);
+
+    toggleArkanoidButton.addEventListener('click', () => {
+        isArkanoidActive = !isArkanoidActive;
+        if (isArkanoidActive) {
+            toggleArkanoidButton.textContent = "Убрать Арканоид";
+            platform = {
+                width: canvas.width * 0.2, height: canvas.height * 0.025,
+                x: canvas.width / 2 - (canvas.width * 0.2) / 2,
+                y: canvas.height - canvas.height * 0.05
+            };
+            spawnNewArkBall();
+            spawnSnake();
+            updateScore(0, true);
+        } else {
+            stopArkanoid();
+        }
+    });
+    
+    arkBallMassSlider.addEventListener('input', () => {
+        const mass = parseFloat(arkBallMassSlider.value);
+        arkBallMassVal.textContent = mass.toFixed(1);
+        if (arkBall) {
+            arkBall.mass = mass;
+            arkBall.radius = getBobRadius(mass);
+        }
+    });
+
+    canvas.addEventListener('mousedown', handleDragStart);
+    window.addEventListener('mousemove', handlePointerMove);
+    window.addEventListener('mouseup', handleDragEnd);
+    canvas.addEventListener('touchstart', handleDragStart, { passive: false });
+    window.addEventListener('touchmove', handlePointerMove, { passive: false });
+    window.addEventListener('touchend', handleDragEnd, { passive: false });
+
+    setupAndResize();
+</script>
+
+</body>
+</html>
