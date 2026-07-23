@@ -14,7 +14,7 @@
     <!--
         INSTRUCTION FOR PROGRAMMER / ASSISTANT:
         Every change to this code must be accompanied by an increase in the version number by one hundredth.
-        The version is displayed in the HELP modal (USER MANUAL). Current version: v0.39
+        The version is displayed in the HELP modal (USER MANUAL). Current version: v0.41
     -->
     <style>
         /* Strictly block page scroll, use dynamic dvh height */
@@ -358,7 +358,7 @@
                     Далее запустится <strong>ожидание встряски (1 минута)</strong>, не давая телефону уснуть. <br>
                     Если за эту минуту вы <strong>встряхнете телефон или тапните по таймеру</strong> — плеер снимется с паузы, а отсчет начнется заново. <br>
                     Если нет — плеер уйдёт в глубокий сон и выключит автотаймер.`,
-                helpHTML: `<h2>ПОЛНОЕ РУКОВОДСТВО ПЛЕЕРА <span style="font-size:12px; color:#888; font-weight:normal;">v0.40</span></h2>
+                helpHTML: `<h2>ПОЛНОЕ РУКОВОДСТВО ПЛЕЕРА <span style="font-size:12px; color:#888; font-weight:normal;">v0.41</span></h2>
             <h3>1. Приватность и Автономность 🔒</h3>
             <p>WebAmp PRO — это <strong>на 100% локальное приложение</strong>. Плеер работает только внутри вашего браузера, <strong>не использует интернет</strong> и никуда не загружает ваши аудиофайлы.</p>
             <p><span class="warn">Важно для мобильных:</span> Чтобы функция акселерометра (встряхивания) работала на телефонах, браузеры требуют, чтобы сайт открывался по защищенному протоколу <code>HTTPS</code>.</p>
@@ -422,7 +422,7 @@
                     Then a <strong>1-minute grace period</strong> starts, keeping phone awake. <br>
                     If you <strong>shake the phone or tap timer</strong> — it unpauses and resets the timer. <br>
                     If not — it goes into deep sleep and turns off the timer.`,
-                helpHTML: `<h2>USER MANUAL <span style="font-size:12px; color:#888; font-weight:normal;">v0.40</span></h2>
+                helpHTML: `<h2>USER MANUAL <span style="font-size:12px; color:#888; font-weight:normal;">v0.41</span></h2>
             <h3>1. Privacy & Offline 🔒</h3>
             <p>WebAmp PRO is <strong>100% local</strong>. It runs in your browser, <strong>doesn't use internet</strong> and doesn't upload your files.</p>
             <p><span class="warn">Mobile Note:</span> For the shake sensor to work, browsers require a secure <code>HTTPS</code> connection.</p>
@@ -486,7 +486,7 @@
                     Ardından telefonu uyanık tutan <strong>1 dakikalık bekleme süresi</strong> başlar. <br>
                     Eğer <strong>telefonu sallar veya sayaca dokunursanız</strong> çalışmaya devam eder. <br>
                     Aksi halde derin uykuya geçer.`,
-                helpHTML: `<h2>KULLANIM KILAVUZU <span style="font-size:12px; color:#888; font-weight:normal;">v0.40</span></h2>
+                helpHTML: `<h2>KULLANIM KILAVUZU <span style="font-size:12px; color:#888; font-weight:normal;">v0.41</span></h2>
             <h3>1. Gizlilik ve Çevrimdışı 🔒</h3>
             <p>WebAmp PRO <strong>%100 yereldir</strong>. İnternet kullanmaz ve dosyalarınızı yüklemez.</p>
             <p><span class="warn">Mobil Not:</span> Sallama sensörü için <code>HTTPS</code> bağlantısı gereklidir.</p>
@@ -952,7 +952,7 @@
             files = files.filter(file => validExtensions.includes(file.name.split('.').pop().toLowerCase()));
             files.sort((a, b) => (a.webkitRelativePath || a.name).localeCompare((b.webkitRelativePath || b.name), undefined, { numeric: true, sensitivity: 'base' }));
 
-            playlist = files; UI.fileCountBadge.textContent = `${playlist.length} FILES LOADED`;
+            playlist = files; UI.fileCountBadge.textContent = langData[settings.lang].filesLoaded.replace('{n}', playlist.length);
             playedHistory = []; renderPlaylist();
 
             if (playlist.length > 0) {
@@ -972,7 +972,7 @@
             stopTrack(); playlist = []; playedHistory = []; currentIndex = -1;
             settings.lastTrackPath = ""; settings.lastPosition = 0; saveSettings();
             
-            UI.fileCountBadge.textContent = `0 FILES LOADED`; UI.trackTitle.textContent = "NO TAPE LOADED...";
+            UI.fileCountBadge.textContent = langData[settings.lang].filesLoaded.replace('{n}', 0); UI.trackTitle.textContent = langData[settings.lang].noTape;
             UI.trackTitle.classList.remove('marquee'); UI.timeCurrent.textContent = "00:00"; 
             UI.timeTotal.textContent = "/ 00:00"; UI.progressBar.value = 0;
             UI.playlistUI.innerHTML = '<div style="color: #444; font-size: 11px; text-align: center; margin-top: 30px;">Playlist cleared. Press "⏏"</div>';
