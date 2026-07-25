@@ -35,7 +35,8 @@
    - Сайт развернут на GitHub Pages (`https://heikki-korh-oss.github.io/site-miniapp/`).
    - **Регистр символов (Case-sensitivity):** GitHub Pages работает на Linux-серверах, поэтому пути и названия файлов строго чувствительны к регистру! Файл `LetterSlot.html` и `letterslot.html` — это два разных файла.
    - **Только статика:** Поддерживается только статика (HTML, CSS, JS).
-   - **Авторизация Git:** При работе из IDE используется `gh auth setup-git` для корректной аутентификации через токен GitHub CLI.
+   - **Авторизация Git:** Отправка выполняет через `git push origin main`. Сброс `GITHUB_TOKEN` (`Remove-Item Env:\GITHUB_TOKEN`) делается **только при ошибке авторизации**, а не заранее.
+   - **Разделение серверов:** Проект развернут на GitHub Pages. Он **НЕ деплоится** на AEZA или D-station.
    - **Публичные и скрытые репозитории:** Портал `Site-miniAPP` находится в открытом (Public) репозитории. Приватные проекты (например `ZEROBOT`) хранятся в скрытых (Private) репозиториях без подключения GH Pages.
 
 6. **Плеер WebAmp.html (Продвинутый таймер сна и MediaSession API)**
