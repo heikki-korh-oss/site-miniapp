@@ -1,0 +1,1400 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sight-Reader PWA</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #1e1e24 0%, #2b2b36 100%);
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #f0f0f0;
+            --text-muted: #a0a0a0;
+            
+            --key-white: #ffffff;
+            --key-white-active: #e0e0e0;
+            --key-black: #2a2a2a;
+            --key-black-active: #1a1a1a;
+            
+            --color-perfect: #4ade80; /* Мятно-зеленый */
+            --color-miss: #fb7185; /* Кораллово-красный */
+            --color-neutral: #ffffff;
+            
+            --canvas-bg: rgba(0, 0, 0, 0.2);
+            --staff-line: rgba(255, 255, 255, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Top HUD */
+        .hud {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: var(--glass-bg);
+            border-bottom: 1px solid var(--glass-border);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 10;
+        }
+
+        .hud-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        
+        .stat-value {
+            color: var(--color-perfect);
+        }
+
+        /* Main Canvas Area */
+        .canvas-container {
+            flex-grow: 1;
+            position: relative;
+            background: var(--canvas-bg);
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        #notationCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Virtual Piano */
+        .piano-container {
+            height: 30vh;
+            min-height: 200px;
+            max-height: 250px;
+            background: var(--glass-bg);
+            border-top: 1px solid var(--glass-border);
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .piano {
+            display: flex;
+            position: relative;
+            height: 100%;
+            width: 100%;
+            /* max-width убрано, чтобы заполнять весь широкий монитор */
+        }
+
+        .key {
+            position: relative;
+            border-radius: 0 0 8px 8px;
+            cursor: pointer;
+            transition: background-color 0.1s, transform 0.05s;
+        }
+
+        .key.white {
+            flex: 1;
+            background: var(--key-white);
+            border: 1px solid #ccc;
+            border-top: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            z-index: 1;
+        }
+
+        .key.white:active, .key.white.active {
+            background: var(--key-white-active);
+            transform: translateY(2px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .key.black {
+            position: absolute;
+            background: var(--key-black);
+            border-radius: 0 0 6px 6px;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.5);
+            z-index: 2;
+            transform: translateX(-50%);
+            /* width и left будут вычисляться динамически в JS */
+        }
+
+        .key.black:active, .key.black.active {
+            background: var(--key-black-active);
+            transform: translateX(-50%) translateY(2px);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+        
+        /* Цвета попаданий на клавишах */
+        .key.perfect { background: var(--color-perfect) !important; }
+        .key.miss { background: var(--color-miss) !important; }
+
+        /* Overlay for "Start" */
+        #startOverlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            cursor: pointer;
+        }
+        
+        .btn-start {
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            border-radius: 1.25rem;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            color: white;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+            transition: background 0.2s;
+        }
+        .btn-start:hover { background: rgba(255,255,255,0.1); }
+        
+        .menu-box {
+            background: rgba(15, 23, 42, 0.92);
+            border: 1px solid var(--glass-border);
+            border-radius: 1.5rem;
+            padding: 1.75rem;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            width: 350px;
+            max-width: 95vw;
+            box-sizing: border-box;
+        }
+
+        .menu-title {
+            margin: 0 0 1rem;
+            color: var(--color-perfect);
+            text-align: center;
+            font-size: 1.5rem;
+        }
+
+        .menu-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.9rem;
+        }
+
+        .menu-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            text-align: left;
+        }
+
+        .menu-field label {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .menu-box select, .menu-box input {
+            background-color: #1e1e26 !important;
+            color: #ffffff !important;
+            border: 1px solid var(--glass-border);
+            padding: 0.65rem;
+            border-radius: 0.5rem;
+            font-size: 0.95rem;
+            outline: none;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .menu-box option {
+            background-color: #1e1e26 !important;
+            color: #ffffff !important;
+            padding: 10px;
+        }
+
+        .menu-tip {
+            background: rgba(251, 191, 36, 0.1);
+            border: 1px dashed rgba(251, 191, 36, 0.3);
+            padding: 0.6rem;
+            border-radius: 0.6rem;
+            font-size: 0.8rem;
+            color: #fbbf24;
+            text-align: center;
+        }
+
+        .btn-start {
+            padding: 12px 30px;
+            font-size: 1.25rem;
+            border-radius: 1rem;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            color: white;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+            transition: background 0.2s;
+            width: 100%;
+            margin-top: 0.2rem;
+        }
+        .btn-start:hover { background: rgba(255,255,255,0.1); }
+
+        /* --- АДАПТИВНОСТЬ ДЛЯ АЛЬБОМНОЙ ОРИЕНТАЦИИ МОБИЛЬНЫХ УСТРОЙСТВ --- */
+        @media (max-height: 550px) {
+            #startOverlay {
+                padding: 10px;
+                overflow-y: auto;
+            }
+            .menu-box {
+                width: 580px;
+                max-width: 98vw;
+                padding: 0.9rem 1.25rem;
+                border-radius: 1rem;
+            }
+            .menu-title {
+                margin: 0 0 0.5rem;
+                font-size: 1.15rem;
+            }
+            .menu-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 0.4rem 0.9rem;
+            }
+            .menu-field {
+                gap: 0.2rem;
+            }
+            .menu-field label {
+                font-size: 0.78rem;
+            }
+            .menu-box select, .menu-box input {
+                padding: 0.45rem;
+                font-size: 0.85rem;
+            }
+            .menu-tip {
+                grid-column: 1 / -1;
+                padding: 0.35rem;
+                font-size: 0.75rem;
+            }
+            .btn-start {
+                grid-column: 1 / -1;
+                padding: 8px 20px;
+                font-size: 1.05rem;
+                border-radius: 0.75rem;
+                margin-top: 0.1rem;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Start Overlay (Required for Web Audio API context initialization) -->
+    <div id="startOverlay">
+        <div id="countdownText" style="display: none; font-size: 6rem; color: var(--color-perfect); font-weight: bold; text-shadow: 0 4px 15px rgba(0,0,0,0.5);">3</div>
+        
+        <div class="menu-box" id="startMenu">
+            <h2 class="menu-title">Настройки</h2>
+            
+            <div class="menu-grid">
+                <div class="menu-field">
+                    <label>Уровень сложности:</label>
+                    <select id="levelSelect">
+                        <option value="1">Уровень 1 (5 нот)</option>
+                        <option value="2">Уровень 2 (Октава)</option>
+                        <option value="3">Уровень 3 (Расширенный)</option>
+                        <option value="4">Уровень 4 (2 октавы)</option>
+                        <option value="5">Уровень 5 (Все ноты)</option>
+                    </select>
+                </div>
+                
+                <div class="menu-field">
+                    <label>Размер такта:</label>
+                    <select id="timeSigSelect">
+                        <option value="4">4/4 (Стандарт)</option>
+                        <option value="3">3/4 (Вальс)</option>
+                        <option value="2">2/4 (Марш)</option>
+                    </select>
+                </div>
+
+                <div class="menu-field">
+                    <label>Тип управления:</label>
+                    <select id="controlTypeSelect" onchange="onControlModeChange()">
+                        <option value="mouse">🖱️ Мышь (для ПК)</option>
+                        <option value="touch">📱 Сенсорный экран (Планшет / Смартфон)</option>
+                        <option value="midi">🎹 MIDI-клавиатура (USB / Bluetooth)</option>
+                    </select>
+                </div>
+
+                <div class="menu-field">
+                    <label>Стартовая скорость (BPM):</label>
+                    <input type="number" id="menuBpm" value="20" min="10" max="150">
+                </div>
+
+                <div class="menu-tip">
+                    📱 <b>Рекомендация:</b> Используйте <b>альбомный (горизонтальный)</b> режим экрана для наилучшего обзора.
+                </div>
+
+                <button class="btn-start" onclick="startCountdown()">Начать тренировку</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- HUD -->
+    <div class="hud">
+        <div class="hud-stats">
+            <div>Уровень: <span id="statLevel" class="stat-value">1</span></div>
+            <div>Точность: <span id="statAcc" class="stat-value">100%</span></div>
+            <div>Комбо: <span id="statCombo" class="stat-value">0</span></div>
+            <div>Скорость: <span id="statSpeed" class="stat-value">40</span> BPM</div>
+        </div>
+        <div>
+            <span style="color: var(--text-muted); font-size: 0.9rem;">Web MIDI: <span id="midiStatus">🔴</span></span>
+        </div>
+    </div>
+
+    <!-- Canvas Area -->
+    <div class="canvas-container">
+        <canvas id="notationCanvas"></canvas>
+    </div>
+
+    <!-- Piano -->
+    <div class="piano-container">
+        <div class="piano" id="pianoWrapper">
+            <!-- Сгенерируется через JS -->
+        </div>
+    </div>
+
+<script>
+    // --- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ---
+    let audioCtx = null;
+    let canvas, ctx;
+    let width, height;
+    let lastTime = 0;
+    
+    // Игровые параметры и Адаптивная сложность
+    let BPM = 20; 
+    let level = 1;
+    let controlMode = 'mouse';
+    let score = { combo: 0, hits: 0, total: 0 };
+    let activeNotes = [];
+    let activeBeats = [];
+    let lastGeneratedMidi = null;
+    let feedbackEffects = [];
+    
+    let currentCycle = 0; 
+    let notesCount = 0;
+    let spacing = 0;
+    let isGameStarted = false;
+    
+    // Sweeping Cursor (Движущийся сканер)
+    let cursorX = 120;
+    let cursorWidth = 60; // Полупрозрачное окно для прожатия
+    let startX = 120;
+    let endX = 0; // Рассчитывается при resize
+    
+    // Spaced Repetition System (SRS)
+    let mistakeWeights = {}; 
+    
+    // --- НОТНЫЙ СТАН И МАППИНГ ---
+    const lineSpacing = 12;
+    let topY = 0;
+    let staffCenterY = 0;
+
+    const trebleMap = {
+        95: -7, 93: -6.5, 91: -6, 89: -5.5, 88: -5, 86: -4.5, 84: -4, // Oct 6
+        83: -3.5, 81: -3, 79: -2.5, 77: -2, 76: -1.5, 74: -1, 72: -0.5, // Oct 5
+        71: 0, 69: 0.5, 67: 1, 65: 1.5, 64: 2, 62: 2.5, 60: 3, // Oct 4
+        59: 3.5, 57: 4, 55: 4.5, 53: 5, 52: 5.5, 50: 6, 48: 6.5 // Oct 3
+    };
+
+    const noteNamesRu = ['До', 'До♯', 'Ре', 'Ре♯', 'Ми', 'Фа', 'Фа♯', 'Соль', 'Соль♯', 'Ля', 'Ля♯', 'Си'];
+    function getNoteNameRu(midi) {
+        return noteNamesRu[midi % 12];
+    }
+
+    const levelPools = {
+        1: [60, 62, 64, 65, 67],
+        2: [60, 62, 64, 65, 67, 69, 71, 72],
+        3: [55, 57, 59, 60, 62, 64, 65, 67, 69, 71, 72],
+        4: [55, 57, 59, 60, 62, 64, 65, 67, 69, 71, 72, 74, 76, 77, 79],
+        5: Object.keys(trebleMap).map(Number).filter(m => !isBlackKey(m))
+    };
+    
+    // --- ГАРМОНИЧЕСКИЕ ИНТЕРВАЛЫ И АККОРДЫВ ТОНАЛЬНОСТИ ДО-МАЖОР (C MAJOR) ---
+    const cMajorIntervals = [
+        [60, 64], [62, 65], [64, 67], [65, 69], [67, 71], [69, 72], [71, 74], // Терции
+        [60, 67], [62, 69], [64, 71], [65, 72], [67, 74],                     // Квинты
+        [60, 69], [62, 71], [64, 72], [65, 74], [67, 76]                      // Сексты
+    ];
+
+    const cMajorChords = [
+        [60, 64, 67], [64, 67, 72], [67, 72, 76], // C major
+        [65, 69, 72], [69, 72, 77],               // F major
+        [67, 71, 74], [55, 59, 62],               // G major
+        [57, 60, 64], [69, 72, 76],               // A minor
+        [62, 65, 69], [64, 67, 71]                // Dm / Em
+    ];
+
+    function getHarmonicInterval(baseMidi) {
+        const valid = cMajorIntervals.filter(pair => pair.includes(baseMidi) && pair.every(m => currentPool.includes(m)));
+        if (valid.length > 0) {
+            return valid[Math.floor(Math.random() * valid.length)];
+        }
+        return [baseMidi];
+    }
+
+    function getHarmonicChord(baseMidi) {
+        const valid = cMajorChords.filter(triad => triad.includes(baseMidi) && triad.every(m => currentPool.includes(m)));
+        if (valid.length > 0) {
+            return valid[Math.floor(Math.random() * valid.length)];
+        }
+        return getHarmonicInterval(baseMidi);
+    }
+    
+    let currentPool = levelPools[1];
+
+    function isBlackKey(midi) {
+        const relative = midi % 12;
+        return [1, 3, 6, 8, 10].includes(relative);
+    }
+    
+    let timeSignature = 4; // Размер такта
+
+    function onControlModeChange() {
+        const mode = document.getElementById('controlTypeSelect').value;
+        if (mode === 'midi') {
+            initWebMIDI();
+        }
+    }
+
+    // --- ИНИЦИАЛИЗАЦИЯ ---
+    function startCountdown() {
+        const menu = document.getElementById('startMenu');
+        const text = document.getElementById('countdownText');
+        const overlay = document.getElementById('startOverlay');
+        
+        // Считываем настройки
+        level = parseInt(document.getElementById('levelSelect').value);
+        timeSignature = parseInt(document.getElementById('timeSigSelect').value);
+        BPM = parseInt(document.getElementById('menuBpm').value) || 20;
+        controlMode = document.getElementById('controlTypeSelect').value;
+        
+        if (controlMode === 'midi') {
+            initWebMIDI();
+        }
+        
+        menu.style.display = 'none';
+        text.style.display = 'block';
+        overlay.style.background = 'rgba(0, 0, 0, 0.4)';
+        
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!audioCtx) audioCtx = new AudioContext();
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        
+        // Расчет разрешения, пропорций и генерация клавиш выполняются СТРОГО ПОСЛЕ клика "Начать тренировку"
+        initApp();
+        
+        // Фильтруем ноты по сформированной под этот размер экрана клавиатуре
+        Object.keys(levelPools).forEach(lvl => {
+            levelPools[lvl] = levelPools[lvl].filter(m => document.querySelector(`.key[data-midi="${m}"]`));
+            if (levelPools[lvl].length === 0) levelPools[lvl] = [60];
+        });
+        currentPool = levelPools[level];
+        lastGeneratedMidi = null;
+        updateHUD();
+        
+        let count = 3;
+        text.innerText = count;
+        playTone(72);
+        
+        const interval = setInterval(() => {
+            count--;
+            if (count > 0) {
+                text.innerText = count;
+                playTone(72);
+            } else if (count === 0) {
+                text.innerText = "СТАРТ!";
+                playTone(84);
+            } else {
+                clearInterval(interval);
+                overlay.style.display = 'none';
+                isGameStarted = true;
+            }
+        }, 800);
+    }
+
+    function initApp() {
+        generatePiano(48, 83); // C3 to B5 (3 октавы)
+        
+        canvas = document.getElementById('notationCanvas');
+        ctx = canvas.getContext('2d');
+        
+        // Расчет геометрии и разрешения
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        setupPianoKeys();
+        
+        currentCycle = 0;
+        initNoteLine();
+        
+        requestAnimationFrame(renderLoop);
+    }
+
+    function resizeCanvas() {
+        const container = canvas.parentElement;
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
+        width = canvas.width;
+        height = canvas.height;
+        
+        staffCenterY = height / 2;
+        topY = staffCenterY - (lineSpacing * 2);
+        
+        endX = width - 80;
+    }
+
+    // --- УЛУЧШЕННЫЙ АКУСТИЧЕСКИЙ СИНТЕЗАТОР ПИАНИНО (Web Audio API) ---
+    function playTone(midiNote, noteType = '4th') {
+        if (!audioCtx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContext();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+
+        const now = audioCtx.currentTime;
+        const freq = 440 * Math.pow(2, (midiNote - 69) / 12);
+        
+        // Расчет продолжительности звучания: Восьмая вдвое короче Четверти!
+        const beatSec = 60 / (BPM || 20);
+        const duration = (noteType === '8th') ? Math.max(0.2, beatSec * 0.45) : Math.max(0.4, beatSec * 0.9);
+
+        // 1. Динамический низкочастотный фильтр (Lowpass Filter Envelope для акустического резонанса)
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'lowpass';
+        const startCutoff = Math.min(9000, freq * 6);
+        const endCutoff = Math.min(3000, freq * 1.4);
+        filter.frequency.setValueAtTime(startCutoff, now);
+        filter.frequency.exponentialRampToValueAtTime(endCutoff, now + duration);
+
+        // 2. Глобальная амплитудная огибающая (Master Volume Envelope)
+        const masterGain = audioCtx.createGain();
+        masterGain.gain.setValueAtTime(0, now);
+        masterGain.gain.linearRampToValueAtTime(0.55, now + 0.012); // Сочный удар молоточка
+        masterGain.gain.exponentialRampToValueAtTime(0.18, now + (duration * 0.4));
+        masterGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+        // 3. Струнный Осциллятор 1 (Triangle - Фундаментальный тон с детьюном +2 cents)
+        const osc1 = audioCtx.createOscillator();
+        osc1.type = 'triangle';
+        osc1.frequency.setValueAtTime(freq, now);
+        osc1.detune.setValueAtTime(2, now);
+
+        // 4. Струнный Осциллятор 2 (Sine - Глубокий резонанс с детьюном -2 cents)
+        const osc2 = audioCtx.createOscillator();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(freq, now);
+        osc2.detune.setValueAtTime(-2, now);
+
+        // 5. Войлочный молоточковый щелчок (Hammer Strike Envelope - 2-я гармоника)
+        const hammerOsc = audioCtx.createOscillator();
+        const hammerGain = audioCtx.createGain();
+        hammerOsc.type = 'sawtooth';
+        hammerOsc.frequency.setValueAtTime(freq * 2, now);
+        hammerGain.gain.setValueAtTime(0.15, now);
+        hammerGain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+
+        // Коммутация звуковых узлов
+        osc1.connect(filter);
+        osc2.connect(filter);
+        hammerOsc.connect(hammerGain);
+        hammerGain.connect(filter);
+
+        filter.connect(masterGain);
+        masterGain.connect(audioCtx.destination);
+
+        // Старт и остановка
+        osc1.start(now);
+        osc2.start(now);
+        hammerOsc.start(now);
+
+        osc1.stop(now + duration + 0.05);
+        osc2.stop(now + duration + 0.05);
+        hammerOsc.stop(now + 0.05);
+    }
+
+    // --- ГЕНЕРАЦИЯ ПИАНИНО ---
+    function generatePiano(startMidi, endMidi) {
+        const wrapper = document.getElementById('pianoWrapper');
+        wrapper.innerHTML = '';
+        
+        let numWhite = 0;
+        for (let m = startMidi; m <= endMidi; m++) if (!isBlackKey(m)) numWhite++;
+        
+        let whiteIndex = 0;
+        for (let m = startMidi; m <= endMidi; m++) {
+            const isBlack = isBlackKey(m);
+            const keyEl = document.createElement('div');
+            keyEl.dataset.midi = m;
+            
+            if (isBlack) {
+                keyEl.className = 'key black';
+                keyEl.style.width = `calc(100% / ${numWhite} * 0.7)`;
+                keyEl.style.height = '60%';
+                keyEl.style.left = `calc(100% / ${numWhite} * ${whiteIndex})`;
+            } else {
+                keyEl.className = 'key white';
+                whiteIndex++;
+            }
+            wrapper.appendChild(keyEl);
+        }
+    }
+
+    // --- УПРАВЛЕНИЕ И ИГРОВАЯ ЛОГИКА ---
+    function setupPianoKeys() {
+        const keys = document.querySelectorAll('.key');
+        
+        const pressKey = (el) => {
+            if(el.classList.contains('active')) return;
+            el.classList.add('active');
+            const midi = parseInt(el.dataset.midi);
+            checkHit(midi, el);
+        };
+        
+        const releaseKey = (el) => {
+            el.classList.remove('active');
+            setTimeout(() => {
+                el.classList.remove('perfect', 'miss');
+            }, 300);
+        };
+
+        keys.forEach(key => {
+            if (controlMode === 'mouse') {
+                key.addEventListener('mousedown', () => pressKey(key));
+                key.addEventListener('mouseup', () => releaseKey(key));
+                key.addEventListener('mouseleave', () => releaseKey(key));
+            } else if (controlMode === 'touch') {
+                key.addEventListener('touchstart', (e) => { e.preventDefault(); pressKey(key); }, {passive: false});
+                key.addEventListener('touchend', (e) => { e.preventDefault(); releaseKey(key); }, {passive: false});
+            } else {
+                // В MIDI режиме подсвечиваем и мышь, и касания на случай тестирования
+                key.addEventListener('mousedown', () => pressKey(key));
+                key.addEventListener('mouseup', () => releaseKey(key));
+                key.addEventListener('touchstart', (e) => { e.preventDefault(); pressKey(key); }, {passive: false});
+                key.addEventListener('touchend', (e) => { e.preventDefault(); releaseKey(key); }, {passive: false});
+            }
+        });
+    }
+
+    // --- WEB MIDI API ---
+    function initWebMIDI() {
+        if (navigator.requestMIDIAccess) {
+            navigator.requestMIDIAccess().then(onMIDISuccess, onMIDIFailure);
+        } else {
+            document.getElementById('midiStatus').innerText = 'Не поддерживается';
+        }
+    }
+
+    function onMIDISuccess(midiAccess) {
+        const inputs = midiAccess.inputs.values();
+        let connected = false;
+        for (let input = inputs.next(); input && !input.done; input = inputs.next()) {
+            input.value.onmidimessage = getMIDIMessage;
+            connected = true;
+        }
+        
+        const statusEl = document.getElementById('midiStatus');
+        if (connected) {
+            statusEl.innerText = '🟢 Подключено';
+            statusEl.style.color = 'var(--color-perfect)';
+        } else {
+            statusEl.innerText = '🟡 Отключено';
+        }
+
+        midiAccess.onstatechange = (e) => {
+            if(e.port.state === 'connected') {
+                e.port.onmidimessage = getMIDIMessage;
+                statusEl.innerText = '🟢 ' + e.port.name;
+                statusEl.style.color = 'var(--color-perfect)';
+            } else {
+                statusEl.innerText = '🟡 Отключено';
+                statusEl.style.color = 'var(--text-muted)';
+            }
+        };
+    }
+
+    function onMIDIFailure() {
+        document.getElementById('midiStatus').innerText = '❌ Ошибка';
+    }
+
+    function getMIDIMessage(message) {
+        const command = message.data[0];
+        const midi = message.data[1];
+        const velocity = (message.data.length > 2) ? message.data[2] : 0;
+        
+        if (command === 144 && velocity > 0) {
+            const keyEl = document.querySelector(`.key[data-midi="${midi}"]`);
+            if (keyEl) keyEl.classList.add('active');
+            checkHit(midi, keyEl);
+        } else if (command === 128 || (command === 144 && velocity === 0)) {
+            const keyEl = document.querySelector(`.key[data-midi="${midi}"]`);
+            if (keyEl) {
+                keyEl.classList.remove('active');
+                setTimeout(() => keyEl.classList.remove('perfect', 'miss'), 300);
+            }
+        }
+    }
+    
+    function checkHit(playedMidi, keyElement) {
+        let hitFound = false;
+        const cursorCenter = cursorX + (cursorWidth / 2);
+
+        for (let i = 0; i < activeNotes.length; i++) {
+            const note = activeNotes[i];
+            
+            // Если нота находится внутри курсора (окна)
+            if (!note.played && Math.abs(note.x - cursorCenter) < (cursorWidth / 2) + 15) {
+                if (note.midi === playedMidi) {
+                    note.played = true;
+                    note.state = 'perfect';
+                    if (keyElement) keyElement.classList.add('perfect');
+                    score.combo++;
+                    score.hits++;
+                    score.total++;
+                    score.consecutiveMisses = 0; // Сброс
+                    hitFound = true;
+                    
+                    // Озвучиваем с точной длительностью типа ноты (четверть / восьмая)
+                    playTone(playedMidi, note.type);
+                    
+                    // Эффект идеального попадания (зеленый всплеск)
+                    feedbackEffects.push({
+                        type: 'perfect_burst',
+                        x: note.x,
+                        y: staffCenterY + ((trebleMap[playedMidi] || 0) * lineSpacing * 2),
+                        radius: 14,
+                        maxRadius: 40,
+                        alpha: 1.0,
+                        startTime: Date.now()
+                    });
+                } else {
+                    note.played = true;
+                    note.state = 'miss';
+                    if (keyElement) keyElement.classList.add('miss');
+                    score.combo = 0;
+                    score.total++;
+                    score.consecutiveMisses = (score.consecutiveMisses || 0) + 1;
+                    mistakeWeights[note.midi] = (mistakeWeights[note.midi] || 0) + 1;
+                    
+                    playTone(playedMidi, '8th');
+                    
+                    if (score.consecutiveMisses >= 4 && level > 1) {
+                        level--;
+                        currentPool = levelPools[level];
+                        score.consecutiveMisses = 0;
+                    }
+                    hitFound = true;
+                    
+                    // Отображаем ошибочно нажатую ноту красным призраком
+                    feedbackEffects.push({
+                        type: 'wrong_note',
+                        x: cursorCenter,
+                        midi: playedMidi,
+                        startTime: Date.now(),
+                        duration: 1800
+                    });
+                }
+                updateHUD();
+                break;
+            }
+        }
+        
+        if (!hitFound) {
+            // Нажатие вне зоны нот — сброс комбо и рисование ошибочной ноты
+            if (keyElement) keyElement.classList.add('miss');
+            score.combo = 0;
+            score.consecutiveMisses = (score.consecutiveMisses || 0) + 1;
+            playTone(playedMidi, '8th');
+            if (score.consecutiveMisses >= 4 && level > 1) {
+                level--;
+                currentPool = levelPools[level];
+                score.consecutiveMisses = 0;
+            }
+            
+            feedbackEffects.push({
+                type: 'wrong_note',
+                x: cursorCenter,
+                midi: playedMidi,
+                startTime: Date.now(),
+                duration: 1800
+            });
+            updateHUD();
+        }
+        
+        checkLevelUp();
+    }
+    
+    function checkLevelUp() {
+        if (score.combo > 15 && level < 5) {
+            const acc = score.total > 0 ? (score.hits / score.total) : 1;
+            if (acc > 0.9) {
+                level++;
+                score.combo = 0; 
+                currentPool = levelPools[level];
+                updateHUD();
+            }
+        }
+    }
+    
+    function updateHUD() {
+        document.getElementById('statLevel').innerText = level;
+        document.getElementById('statSpeed').innerText = BPM;
+        document.getElementById('statCombo').innerText = score.combo;
+        const acc = score.total > 0 ? Math.round((score.hits / score.total) * 100) : 100;
+        document.getElementById('statAcc').innerText = acc + '%';
+        
+        if (score.combo > 0) {
+            document.getElementById('statCombo').style.color = 'var(--color-perfect)';
+        } else {
+            document.getElementById('statCombo').style.color = 'var(--text-main)';
+        }
+    }
+
+    // --- ГЕНЕРАЦИЯ СТРОКИ НОТ (Look Ahead и Ритмика) ---
+    function initNoteLine() {
+        activeBeats = [];
+        const pathWidth = endX - startX;
+        
+        // Автоматическая подгонка под ЦЕЛОЕ количество тактов на ширину экрана
+        const targetMeasureWidth = timeSignature * 110; 
+        const rawMeasures = pathWidth / targetMeasureWidth;
+        const numMeasures = Math.max(2, Math.round(rawMeasures));
+        
+        notesCount = numMeasures * timeSignature; 
+        spacing = pathWidth / notesCount;
+        
+        for (let i = 0; i < notesCount; i++) {
+            activeBeats.push(generateBeat(i, currentCycle));
+        }
+        updateActiveNotes();
+    }
+    
+    function updateActiveNotes() {
+        activeNotes = activeBeats.flat();
+    }
+
+    function generateBeat(beatIndex, cycle) {
+        const beatNotes = [];
+        let type = '4th';
+        
+        // Ритмика: появление 8-х нот на уровне 3 и выше (16-е пока убраны)
+        if (level >= 3 && Math.random() < 0.35) type = '8th';
+        
+        const count = (type === '8th') ? 2 : 1;
+        
+        for (let j = 0; j < count; j++) {
+            let midiToSpawn = null;
+            const mistakeKeys = Object.keys(mistakeWeights).map(Number).filter(m => currentPool.includes(m) && mistakeWeights[m] > 0);
+            if (mistakeKeys.length > 0 && Math.random() < 0.3) {
+                mistakeKeys.sort((a, b) => mistakeWeights[b] - mistakeWeights[a]);
+                midiToSpawn = mistakeKeys[0];
+                mistakeWeights[midiToSpawn] -= 0.5; 
+            } else {
+                if (lastGeneratedMidi && currentPool.length > 1) {
+                    let candidates = [];
+                    currentPool.forEach(m => {
+                        let diff = Math.abs(m - lastGeneratedMidi);
+                        let weight = 0;
+                        if (diff === 0) weight = 5;       
+                        else if (diff <= 2) weight = 50;  // секунда
+                        else if (diff <= 4) weight = 30;  // терция/аккорд
+                        else if (diff <= 7) weight = 10;  // кварта/квинта
+                        else weight = 5;                  // скачки
+                        
+                        for(let k=0; k<weight; k++) candidates.push(m);
+                    });
+                    if (candidates.length > 0) {
+                        midiToSpawn = candidates[Math.floor(Math.random() * candidates.length)];
+                    }
+                }
+                if (!midiToSpawn) {
+                    midiToSpawn = currentPool[Math.floor(Math.random() * currentPool.length)];
+                }
+            }
+            lastGeneratedMidi = midiToSpawn;
+            
+            const subSpacing = spacing / count;
+            const noteX = startX + (beatIndex * spacing) + (j * subSpacing) + (subSpacing / 2);
+            
+            // Многозвучие (Интервалы и Аккорды) для Сенсора и MIDI на высоких уровнях
+            const isPolyphonicMode = (controlMode === 'touch' || controlMode === 'midi');
+            let chordMidis = [midiToSpawn];
+            
+            if (isPolyphonicMode && type === '4th') {
+                if (level === 4 && Math.random() < 0.4) {
+                    chordMidis = getHarmonicInterval(midiToSpawn);
+                } else if (level === 5) {
+                    if (Math.random() < 0.45) {
+                        chordMidis = getHarmonicChord(midiToSpawn);
+                    } else if (Math.random() < 0.3) {
+                        chordMidis = getHarmonicInterval(midiToSpawn);
+                    }
+                }
+            }
+
+            const avgOffset = chordMidis.reduce((sum, m) => sum + trebleMap[m], 0) / chordMidis.length;
+            const stemDir = (avgOffset > 0) ? 'up' : 'down';
+            
+            chordMidis.forEach(midiVal => {
+                beatNotes.push({
+                    x: noteX,
+                    midi: midiVal,
+                    played: false,
+                    state: 'idle',
+                    cycle: cycle,
+                    type: type,
+                    stemDir: stemDir
+                });
+            });
+        }
+        return beatNotes;
+    }
+
+    // --- RENDER ENGINE (HTML5 Canvas) ---
+    function drawClef() {
+        ctx.font = '140px serif';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('𝄞', 60, staffCenterY + 15); 
+    }
+
+    function drawTimeSignature() {
+        ctx.font = 'bold 48px serif';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(timeSignature, 100, staffCenterY - 24);
+        ctx.fillText('4', 100, staffCenterY + 24);
+    }
+    
+    function drawBarlines() {
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        
+        // Рисуем тактовые черты каждые timeSignature долей (ровно по границам целых тактов)
+        for (let i = 0; i <= notesCount; i += timeSignature) {
+            if (i === 0) continue;
+            const x = startX + (i * spacing);
+            if (x >= startX && x <= endX + 2) {
+                ctx.moveTo(Math.floor(x) + 0.5, staffCenterY - (2 * lineSpacing * 2));
+                ctx.lineTo(Math.floor(x) + 0.5, staffCenterY + (2 * lineSpacing * 2));
+            }
+        }
+        ctx.stroke();
+    }
+
+    function drawStaff() {
+        const staffColor = 'rgba(255, 255, 255, 0.3)';
+        ctx.strokeStyle = staffColor;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let i = -2; i <= 2; i++) {
+            const y = staffCenterY + (i * lineSpacing * 2);
+            ctx.moveTo(0, Math.floor(y) + 0.5);
+            ctx.lineTo(width, Math.floor(y) + 0.5);
+        }
+        ctx.stroke();
+    }
+    
+    function drawLedgerLine(x, y) {
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(x - 18, Math.floor(y) + 0.5);
+        ctx.lineTo(x + 18, Math.floor(y) + 0.5);
+        ctx.stroke();
+    }
+
+    function drawNoteBadge(x, labelText, topBoundaryY) {
+        ctx.save();
+        ctx.font = 'bold 13px system-ui, -apple-system, sans-serif';
+        const textMetrics = ctx.measureText(labelText);
+        const textWidth = textMetrics.width;
+        const badgeW = Math.max(36, textWidth + 14);
+        const badgeH = 22;
+        const badgeX = x - (badgeW / 2);
+        
+        // Динамическое позиционирование: плашка подстраивается под самые высокие ноты/штили
+        const defaultTopY = topY - 55;
+        const badgeY = (topBoundaryY !== undefined) ? Math.min(defaultTopY, topBoundaryY - 28) : defaultTopY;
+
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+        ctx.strokeStyle = '#4ade80';
+        ctx.lineWidth = 1.5;
+
+        ctx.beginPath();
+        if (ctx.roundRect) {
+            ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 6);
+        } else {
+            ctx.rect(badgeX, badgeY, badgeW, badgeH);
+        }
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#4ade80';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(labelText, x, badgeY + (badgeH / 2) + 0.5);
+        ctx.restore();
+    }
+
+    function drawNotes() {
+        const noteGroups = {};
+        for (let i = 0; i < activeNotes.length; i++) {
+            const note = activeNotes[i];
+            const key = `${note.x}_${note.cycle}`;
+            if (!noteGroups[key]) noteGroups[key] = [];
+            noteGroups[key].push(note);
+        }
+
+        for (let key in noteGroups) {
+            const group = noteGroups[key];
+            
+            if (group.length === 1) {
+                const note = group[0];
+                const staffOffset = trebleMap[note.midi];
+                const y = staffCenterY + (staffOffset * lineSpacing * 2);
+                
+                if (note.cycle > currentCycle) {
+                    ctx.fillStyle = 'rgba(100, 200, 255, 0.4)';
+                } else {
+                    if (note.state === 'perfect') ctx.fillStyle = '#4ade80';
+                    else if (note.state === 'miss') ctx.fillStyle = '#fb7185';
+                    else ctx.fillStyle = '#ffffff';
+                }
+                
+                ctx.beginPath();
+                ctx.ellipse(note.x, y, 14, 10, -0.2, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                ctx.strokeStyle = ctx.fillStyle;
+                ctx.lineWidth = 2;
+                
+                let stemDir = note.stemDir || ((staffOffset > 0) ? 'up' : 'down');
+                let stemEndY;
+                
+                ctx.beginPath();
+                if (stemDir === 'up') { 
+                    ctx.moveTo(note.x + 12, y);
+                    stemEndY = y - 45;
+                    ctx.lineTo(note.x + 12, stemEndY);
+                } else { 
+                    ctx.moveTo(note.x - 12, y);
+                    stemEndY = y + 45;
+                    ctx.lineTo(note.x - 12, stemEndY);
+                }
+                ctx.stroke();
+                
+                if (note.type === '8th') {
+                    ctx.fillStyle = ctx.strokeStyle;
+                    ctx.beginPath();
+                    if (stemDir === 'up') {
+                        const sx = note.x + 12;
+                        const sy = stemEndY;
+                        ctx.moveTo(sx, sy);
+                        ctx.bezierCurveTo(sx + 10, sy + 6, sx + 12, sy + 18, sx + 7, sy + 25);
+                        ctx.bezierCurveTo(sx + 8, sy + 16, sx + 6, sy + 8, sx, sy + 10);
+                    } else {
+                        const sx = note.x - 12;
+                        const sy = stemEndY;
+                        ctx.moveTo(sx, sy);
+                        ctx.bezierCurveTo(sx + 10, sy - 6, sx + 12, sy - 18, sx + 7, sy - 25);
+                        ctx.bezierCurveTo(sx + 8, sy - 16, sx + 6, sy - 8, sx, sy - 10);
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                }
+                
+                if (staffOffset >= 3) {
+                    for (let j = 3; j <= Math.floor(staffOffset); j++) {
+                        drawLedgerLine(note.x, staffCenterY + (j * lineSpacing * 2));
+                    }
+                }
+                if (staffOffset <= -3) {
+                    for (let j = -3; j >= Math.ceil(staffOffset); j--) {
+                        drawLedgerLine(note.x, staffCenterY + (j * lineSpacing * 2));
+                    }
+                }
+
+                // Рисуем плашку с русским названием ноты при угадывании (с адаптивным поднимом)
+                if (note.state === 'perfect') {
+                    const topBound = (stemDir === 'up') ? (y - 45) : (y - 12);
+                    drawNoteBadge(note.x, getNoteNameRu(note.midi), topBound);
+                }
+            } else {
+                // Отрисовка АККОРДА / ИНТЕРВАЛА (созвучия нескольких нот)
+                let minY = Infinity, maxY = -Infinity;
+                let stemDir = group[0].stemDir || 'up';
+                let isCycleNext = group[0].cycle > currentCycle;
+
+                group.forEach(note => {
+                    const staffOffset = trebleMap[note.midi];
+                    const y = staffCenterY + (staffOffset * lineSpacing * 2);
+                    minY = Math.min(minY, y);
+                    maxY = Math.max(maxY, y);
+
+                    if (isCycleNext) {
+                        ctx.fillStyle = 'rgba(100, 200, 255, 0.4)';
+                    } else {
+                        if (note.state === 'perfect') ctx.fillStyle = '#4ade80';
+                        else if (note.state === 'miss') ctx.fillStyle = '#fb7185';
+                        else ctx.fillStyle = '#ffffff';
+                    }
+
+                    ctx.beginPath();
+                    ctx.ellipse(note.x, y, 14, 10, -0.2, 0, 2 * Math.PI);
+                    ctx.fill();
+
+                    if (staffOffset >= 3) {
+                        for (let j = 3; j <= Math.floor(staffOffset); j++) {
+                            drawLedgerLine(note.x, staffCenterY + (j * lineSpacing * 2));
+                        }
+                    }
+                    if (staffOffset <= -3) {
+                        for (let j = -3; j >= Math.ceil(staffOffset); j--) {
+                            drawLedgerLine(note.x, staffCenterY + (j * lineSpacing * 2));
+                        }
+                    }
+                });
+
+                // Единый штиль для созвучия
+                ctx.strokeStyle = isCycleNext ? 'rgba(100, 200, 255, 0.4)' : '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                if (stemDir === 'up') {
+                    ctx.moveTo(group[0].x + 12, maxY);
+                    ctx.lineTo(group[0].x + 12, minY - 45);
+                } else {
+                    ctx.moveTo(group[0].x - 12, minY);
+                    ctx.lineTo(group[0].x - 12, maxY + 45);
+                }
+                ctx.stroke();
+
+                // Рисуем названия для сыгранных нот созвучия (с адаптивным подъемом над аккордом)
+                const perfectNotes = group.filter(n => n.state === 'perfect');
+                if (perfectNotes.length > 0) {
+                    const chordLabel = perfectNotes.map(n => getNoteNameRu(n.midi)).join(' ');
+                    const topBound = (stemDir === 'up') ? (minY - 45) : (minY - 12);
+                    drawNoteBadge(group[0].x, chordLabel, topBound);
+                }
+            }
+        }
+    }
+
+    function drawCursor() {
+        ctx.fillStyle = 'rgba(74, 222, 128, 0.15)'; 
+        ctx.fillRect(cursorX, topY - 30, cursorWidth, (8 * lineSpacing) + 60);
+        
+        ctx.strokeStyle = 'rgba(74, 222, 128, 0.6)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(cursorX, topY - 30, cursorWidth, (8 * lineSpacing) + 60);
+    }
+
+    function drawFeedbackEffects() {
+        const now = Date.now();
+        for (let i = feedbackEffects.length - 1; i >= 0; i--) {
+            const fx = feedbackEffects[i];
+            const elapsed = now - fx.startTime;
+
+            if (fx.type === 'perfect_burst') {
+                const progress = elapsed / 400; // 400ms анимация
+                if (progress >= 1) {
+                    feedbackEffects.splice(i, 1);
+                    continue;
+                }
+                const currentRadius = fx.radius + (fx.maxRadius - fx.radius) * progress;
+                const alpha = 1.0 - progress;
+
+                ctx.save();
+                ctx.strokeStyle = `rgba(74, 222, 128, ${alpha})`;
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(fx.x, fx.y, currentRadius, 0, Math.PI * 2);
+                ctx.stroke();
+
+                ctx.fillStyle = `rgba(74, 222, 128, ${alpha * 0.4})`;
+                ctx.beginPath();
+                ctx.arc(fx.x, fx.y, currentRadius * 0.7, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            } 
+            else if (fx.type === 'wrong_note') {
+                const progress = elapsed / fx.duration;
+                if (progress >= 1) {
+                    feedbackEffects.splice(i, 1);
+                    continue;
+                }
+                const alpha = Math.max(0, 1.0 - progress * 0.8);
+                const staffOffset = trebleMap[fx.midi] !== undefined ? trebleMap[fx.midi] : (60 - fx.midi) * 0.5;
+                const y = staffCenterY + (staffOffset * lineSpacing * 2);
+                const stemDir = (staffOffset > 0) ? 'up' : 'down';
+
+                ctx.save();
+                // Красная нота прожатия
+                ctx.fillStyle = `rgba(251, 113, 133, ${alpha})`;
+                ctx.strokeStyle = `rgba(251, 113, 133, ${alpha})`;
+                ctx.lineWidth = 2;
+
+                // Головка ноты
+                ctx.beginPath();
+                ctx.ellipse(fx.x, y, 14, 10, -0.2, 0, 2 * Math.PI);
+                ctx.fill();
+
+                // Штиль
+                let stemEndY;
+                ctx.beginPath();
+                if (stemDir === 'up') {
+                    ctx.moveTo(fx.x + 12, y);
+                    stemEndY = y - 45;
+                    ctx.lineTo(fx.x + 12, stemEndY);
+                } else {
+                    ctx.moveTo(fx.x - 12, y);
+                    stemEndY = y + 45;
+                    ctx.lineTo(fx.x - 12, stemEndY);
+                }
+                ctx.stroke();
+
+                // Метка промаха (крестик по центру ноты)
+                ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.9})`;
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.moveTo(fx.x - 6, y - 6);
+                ctx.lineTo(fx.x + 6, y + 6);
+                ctx.moveTo(fx.x + 6, y - 6);
+                ctx.lineTo(fx.x - 6, y + 6);
+                ctx.stroke();
+
+                // Добавочные линейки для ошибочной ноты
+                if (staffOffset >= 3) {
+                    for (let j = 3; j <= Math.floor(staffOffset); j++) {
+                        drawLedgerLine(fx.x, staffCenterY + (j * lineSpacing * 2));
+                    }
+                }
+                if (staffOffset <= -3) {
+                    for (let j = -3; j >= Math.ceil(staffOffset); j--) {
+                        drawLedgerLine(fx.x, staffCenterY + (j * lineSpacing * 2));
+                    }
+                }
+
+                ctx.restore();
+            }
+        }
+    }
+
+    function renderLoop(time) {
+        if (!lastTime) lastTime = time;
+        const deltaTime = (time - lastTime) / 1000;
+        lastTime = time;
+
+        ctx.clearRect(0, 0, width, height);
+        
+        drawStaff();
+        drawBarlines();
+        drawClef();
+        drawTimeSignature();
+        drawNotes();
+        drawFeedbackEffects();
+        drawCursor();
+        
+        // Движение курсора
+        const pixelsPerBeat = spacing; 
+        const bps = BPM / 60; 
+        const cursorSpeed = pixelsPerBeat * bps; 
+        
+        if (isGameStarted) {
+            cursorX += cursorSpeed * deltaTime;
+        }
+        const cursorCenter = cursorX + (cursorWidth / 2);
+        
+        // Проверка на пропущенные ноты
+        for (let i = 0; i < activeNotes.length; i++) {
+            const note = activeNotes[i];
+            
+            if (note.cycle === currentCycle) {
+                // Промах (Miss)
+                if (!note.played && (cursorX > note.x + (cursorWidth/2))) {
+                    note.played = true;
+                    note.state = 'miss';
+                    score.combo = 0;
+                    score.total++;
+                    score.consecutiveMisses = (score.consecutiveMisses || 0) + 1;
+                    mistakeWeights[note.midi] = (mistakeWeights[note.midi] || 0) + 1;
+                    
+                    if (score.consecutiveMisses >= 4 && level > 1) {
+                        level--;
+                        currentPool = levelPools[level];
+                        score.consecutiveMisses = 0;
+                    }
+                    updateHUD();
+                }
+            }
+        }
+        
+        // Look Ahead (Генерация будущих нот целыми тактами)
+        const halfX = startX + (endX - startX) / 2;
+        const halfMeasureCount = Math.floor((notesCount / timeSignature) / 2) || 1;
+        const halfBeat = halfMeasureCount * timeSignature;
+        
+        // Если курсор перешел экватор, обновляем левую половину стана
+        if (cursorX > halfX) {
+            let updated = false;
+            for (let i = 0; i < halfBeat; i++) {
+                if (activeBeats[i] && activeBeats[i][0].cycle === currentCycle) {
+                    activeBeats[i] = generateBeat(i, currentCycle + 1);
+                    updated = true;
+                }
+            }
+            if (updated) updateActiveNotes();
+        }
+        
+        // Переход на новую строку (Прыжок)
+        if (cursorX >= endX) {
+            cursorX = startX;
+            // Догенерируем правую половину
+            for (let i = halfBeat; i < notesCount; i++) {
+                if (activeBeats[i] && activeBeats[i][0].cycle === currentCycle) {
+                    activeBeats[i] = generateBeat(i, currentCycle + 1);
+                }
+            }
+            updateActiveNotes();
+            currentCycle++; // Будущие ноты становятся текущими
+        }
+        
+        requestAnimationFrame(renderLoop);
+    }
+</script>
+</body>
+</html>
