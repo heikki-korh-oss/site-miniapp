@@ -49,18 +49,19 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 15px 20px;
+            padding: 10px 16px;
             background: var(--glass-bg);
             border-bottom: 1px solid var(--glass-border);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             z-index: 10;
+            flex-shrink: 0;
         }
 
         .hud-stats {
             display: flex;
-            gap: 20px;
-            font-size: 1.2rem;
+            gap: 16px;
+            font-size: 1rem;
             font-weight: 600;
         }
         
@@ -78,6 +79,7 @@
             justify-content: center;
             align-items: center;
             overflow: hidden;
+            min-height: 0; /* Разрешает flex сжатие */
         }
 
         #notationCanvas {
@@ -90,15 +92,33 @@
 
         /* Virtual Piano */
         .piano-container {
-            height: 30vh;
-            min-height: 200px;
-            max-height: 250px;
+            height: 25vh;
+            min-height: 110px;
+            max-height: 180px;
             background: var(--glass-bg);
             border-top: 1px solid var(--glass-border);
-            padding: 10px;
+            padding: 6px 10px;
             display: flex;
             justify-content: center;
             z-index: 10;
+            flex-shrink: 0;
+        }
+
+        /* Адаптивность элементов интерфейса при небольшой высоте экрана (Landscape Mobile) */
+        @media (max-height: 550px) {
+            .hud {
+                padding: 4px 10px;
+            }
+            .hud-stats {
+                gap: 10px;
+                font-size: 0.8rem;
+            }
+            .piano-container {
+                height: 24vh;
+                min-height: 85px;
+                max-height: 115px;
+                padding: 3px 6px;
+            }
         }
 
         .piano {
@@ -413,7 +433,7 @@
     let mistakeWeights = {}; 
     
     // --- НОТНЫЙ СТАН И МАППИНГ ---
-    const lineSpacing = 12;
+    let lineSpacing = 12;
     let topY = 0;
     let staffCenterY = 0;
 
@@ -567,6 +587,8 @@
         width = canvas.width;
         height = canvas.height;
         
+        // Адаптивное масштабирование шага нотных линеек под высоту холста
+        lineSpacing = Math.max(7, Math.min(12, Math.floor(height / 18)));
         staffCenterY = height / 2;
         topY = staffCenterY - (lineSpacing * 2);
         
@@ -983,20 +1005,22 @@
 
     // --- RENDER ENGINE (HTML5 Canvas) ---
     function drawClef() {
-        ctx.font = '140px serif';
+        const clefSize = Math.floor(lineSpacing * 10);
+        ctx.font = `${clefSize}px serif`;
         ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('𝄞', 60, staffCenterY + 15); 
+        ctx.fillText('𝄞', 60, staffCenterY + (lineSpacing * 1.2)); 
     }
 
     function drawTimeSignature() {
-        ctx.font = 'bold 48px serif';
+        const timeSigSize = Math.floor(lineSpacing * 3.8);
+        ctx.font = `bold ${timeSigSize}px serif`;
         ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(timeSignature, 100, staffCenterY - 24);
-        ctx.fillText('4', 100, staffCenterY + 24);
+        ctx.fillText(timeSignature, 100, staffCenterY - (lineSpacing * 1.8));
+        ctx.fillText('4', 100, staffCenterY + (lineSpacing * 1.8));
     }
     
     function drawBarlines() {
@@ -1040,16 +1064,17 @@
 
     function drawNoteBadge(x, labelText, topBoundaryY) {
         ctx.save();
-        ctx.font = 'bold 13px system-ui, -apple-system, sans-serif';
+        const fontSize = Math.max(10, Math.floor(lineSpacing * 1.1));
+        ctx.font = `bold ${fontSize}px system-ui, -apple-system, sans-serif`;
         const textMetrics = ctx.measureText(labelText);
         const textWidth = textMetrics.width;
-        const badgeW = Math.max(36, textWidth + 14);
-        const badgeH = 22;
+        const badgeW = Math.max(28, textWidth + 10);
+        const badgeH = Math.max(16, lineSpacing * 1.8);
         const badgeX = x - (badgeW / 2);
         
         // Динамическое позиционирование: плашка подстраивается под самые высокие ноты/штили
-        const defaultTopY = topY - 55;
-        const badgeY = (topBoundaryY !== undefined) ? Math.min(defaultTopY, topBoundaryY - 28) : defaultTopY;
+        const defaultTopY = topY - (lineSpacing * 3.5);
+        const badgeY = (topBoundaryY !== undefined) ? Math.min(defaultTopY, topBoundaryY - (lineSpacing * 2)) : defaultTopY;
 
         ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
         ctx.strokeStyle = '#4ade80';
@@ -1057,7 +1082,7 @@
 
         ctx.beginPath();
         if (ctx.roundRect) {
-            ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 6);
+            ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 5);
         } else {
             ctx.rect(badgeX, badgeY, badgeW, badgeH);
         }
