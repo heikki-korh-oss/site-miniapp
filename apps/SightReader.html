@@ -49,13 +49,32 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 16px;
+            padding: 8px 16px;
             background: var(--glass-bg);
             border-bottom: 1px solid var(--glass-border);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             z-index: 10;
             flex-shrink: 0;
+        }
+
+        .hud-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--glass-border);
+            color: #ffffff;
+            border-radius: 0.4rem;
+            padding: 3px 8px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+        .hud-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: var(--color-perfect);
         }
 
         .hud-stats {
@@ -384,8 +403,9 @@
             <div>Комбо: <span id="statCombo" class="stat-value">0</span></div>
             <div>Скорость: <span id="statSpeed" class="stat-value">40</span> BPM</div>
         </div>
-        <div>
-            <span style="color: var(--text-muted); font-size: 0.9rem;">Web MIDI: <span id="midiStatus">🔴</span></span>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="color: var(--text-muted); font-size: 0.85rem;">Web MIDI: <span id="midiStatus">🔴</span></span>
+            <button id="fsBtn" class="hud-btn" onclick="toggleFullscreen()" title="Переключить полный экран (вернуть строку браузера)">⛶</button>
         </div>
     </div>
 
@@ -903,15 +923,56 @@
         }
     }
 
+    // --- ПОЛНОЭКРАННЫЙ РЕЖИМ (FULLSCREEN API) ---
+    function toggleFullscreen() {
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+            enterFullscreen();
+        } else {
+            exitFullscreen();
+        }
+    }
+
+    function enterFullscreen() {
+        const doc = document.documentElement;
+        if (doc.requestFullscreen) {
+            doc.requestFullscreen().catch(e => console.log(e));
+        } else if (doc.webkitRequestFullscreen) {
+            doc.webkitRequestFullscreen();
+        }
+    }
+
+    function exitFullscreen() {
+        if (document.exitFullscreen) {
+            document.exitFullscreen().catch(e => console.log(e));
+        } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        }
+    }
+
+    function updateFullscreenBtn() {
+        const btn = document.getElementById('fsBtn');
+        if (!btn) return;
+        if (document.fullscreenElement || document.webkitFullscreenElement) {
+            btn.innerText = '⤢';
+            btn.title = 'Выйти из полного экрана (вернуть строку браузера)';
+        } else {
+            btn.innerText = '⛶';
+            btn.title = 'Развернуть на весь экран';
+        }
+    }
+
+    document.addEventListener('fullscreenchange', updateFullscreenBtn);
+    document.addEventListener('webkitfullscreenchange', updateFullscreenBtn);
+
     // --- ГЕНЕРАЦИЯ СТРОКИ НОТ (Look Ahead и Ритмика) ---
     function initNoteLine() {
         activeBeats = [];
         const pathWidth = endX - startX;
         
-        // Автоматическая подгонка под ЦЕЛОЕ количество тактов на ширину экрана
+        // Масштабирование плотности тактов под объем 1920x1080 (4 полных такта при 4/4)
+        const desktopPathWidth = 1920 - 160; 
         const targetMeasureWidth = timeSignature * 110; 
-        const rawMeasures = pathWidth / targetMeasureWidth;
-        const numMeasures = Math.max(2, Math.round(rawMeasures));
+        const numMeasures = Math.max(3, Math.round(desktopPathWidth / targetMeasureWidth));
         
         notesCount = numMeasures * timeSignature; 
         spacing = pathWidth / notesCount;
@@ -1064,11 +1125,11 @@
 
     function drawNoteBadge(x, labelText, topBoundaryY) {
         ctx.save();
-        const fontSize = Math.max(10, Math.floor(lineSpacing * 1.1));
+        const fontSize = Math.max(9, Math.min(13, Math.floor(lineSpacing * 1.1)));
         ctx.font = `bold ${fontSize}px system-ui, -apple-system, sans-serif`;
         const textMetrics = ctx.measureText(labelText);
         const textWidth = textMetrics.width;
-        const badgeW = Math.max(28, textWidth + 10);
+        const badgeW = Math.max(24, textWidth + 8);
         const badgeH = Math.max(16, lineSpacing * 1.8);
         const badgeX = x - (badgeW / 2);
         
@@ -1121,8 +1182,12 @@
                     else ctx.fillStyle = '#ffffff';
                 }
                 
+                // Адаптивный размер головки ноты под ширину шага
+                const headRx = Math.max(7, Math.min(14, spacing * 0.28));
+                const headRy = Math.max(5, Math.min(10, spacing * 0.20));
+
                 ctx.beginPath();
-                ctx.ellipse(note.x, y, 14, 10, -0.2, 0, 2 * Math.PI);
+                ctx.ellipse(note.x, y, headRx, headRy, -0.2, 0, 2 * Math.PI);
                 ctx.fill();
                 
                 ctx.strokeStyle = ctx.fillStyle;
@@ -1199,8 +1264,11 @@
                         else ctx.fillStyle = '#ffffff';
                     }
 
+                    const headRx = Math.max(7, Math.min(14, spacing * 0.28));
+                    const headRy = Math.max(5, Math.min(10, spacing * 0.20));
+
                     ctx.beginPath();
-                    ctx.ellipse(note.x, y, 14, 10, -0.2, 0, 2 * Math.PI);
+                    ctx.ellipse(note.x, y, headRx, headRy, -0.2, 0, 2 * Math.PI);
                     ctx.fill();
 
                     if (staffOffset >= 3) {
