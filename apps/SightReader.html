@@ -593,6 +593,9 @@
 
     // --- ИНИЦИАЛИЗАЦИЯ ---
     function startCountdown() {
+        // 1. ПЕРВОЕ ДЕЙСТВИЕ: Переход в полноэкранный режим строго синхронно в момент клика по кнопке
+        enterFullscreen();
+
         const menu = document.getElementById('startMenu');
         const text = document.getElementById('countdownText');
         const overlay = document.getElementById('startOverlay');
@@ -629,24 +632,25 @@
         lastGeneratedMidi = null;
         updateHUD();
         
-        let count = 3;
+        // Стартовый отсчет от 5 до 1 с деревянным стуком метронома
+        let count = 5;
         text.innerText = count;
-        playTone(72);
+        playMetronomeClick(false);
         
         const interval = setInterval(() => {
             count--;
             if (count > 0) {
                 text.innerText = count;
-                playTone(72);
+                playMetronomeClick(false);
             } else if (count === 0) {
                 text.innerText = "СТАРТ!";
-                playTone(84);
+                playMetronomeClick(true);
             } else {
                 clearInterval(interval);
                 overlay.style.display = 'none';
                 isGameStarted = true;
             }
-        }, 800);
+        }, 750);
     }
 
     function initApp() {
@@ -751,6 +755,41 @@
         osc1.stop(now + duration + 0.05);
         osc2.stop(now + duration + 0.05);
         hammerOsc.stop(now + 0.05);
+    }
+
+    // --- ЗВУК МЕТРОНОМА (Woodblock Click для отсчета 5-4-3-2-1) ---
+    function playMetronomeClick(isHigh = false) {
+        if (!audioCtx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContext();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        const filter = audioCtx.createBiquadFilter();
+
+        // Деревянный сухой клик метронома
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(1400, now);
+
+        osc.type = 'triangle';
+        const pitch = isHigh ? 1200 : 750;
+        osc.frequency.setValueAtTime(pitch, now);
+        osc.frequency.exponentialRampToValueAtTime(pitch * 0.4, now + 0.025);
+
+        gain.gain.setValueAtTime(0.4, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.04);
     }
 
     // --- ГЕНЕРАЦИЯ ПИАНИНО ---
@@ -1133,12 +1172,12 @@
 
     // --- RENDER ENGINE (HTML5 Canvas) ---
     function drawClef() {
-        const clefSize = Math.floor(lineSpacing * 10);
+        const clefSize = Math.floor(lineSpacing * 6.2);
         ctx.font = `${clefSize}px serif`;
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('𝄞', 60, staffCenterY + (lineSpacing * 1.2)); 
+        ctx.fillText('𝄞', 50, staffCenterY + (lineSpacing * 0.45)); 
     }
 
     function drawTimeSignature() {
