@@ -1235,10 +1235,10 @@
         // Линейный масштаб равен 14.5 интервалам стана
         const scale = (lineSpacing * 14.5) / 12800; 
         
-        // Центрирование спирали файла 145825.svg (X=3450, Y=8750) СТРОГО на 2-ю линейку G4 (50px от левого края)
+        // Точная посадка спирали файла 145825.svg СТРОГО по центру 2-й линейки G4
         ctx.translate(50, gLineY);
         ctx.scale(scale, -scale);
-        ctx.translate(-3450, -8750);
+        ctx.translate(-3450, -7850);
         
         ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
         ctx.fill(getUserClefPath());
