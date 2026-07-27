@@ -586,10 +586,28 @@
 
     function onControlModeChange() {
         const mode = document.getElementById('controlTypeSelect').value;
+        controlMode = mode;
         if (mode === 'midi') {
             initWebMIDI();
         }
     }
+
+    // Автоматическое определение режима управления по устройству пользователя
+    function detectDefaultControlMode() {
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
+            || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) 
+            || ('ontouchstart' in window);
+        
+        const controlSelect = document.getElementById('controlTypeSelect');
+        if (controlSelect) {
+            const defaultMode = isMobile ? 'touch' : 'mouse';
+            controlSelect.value = defaultMode;
+            controlMode = defaultMode;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', detectDefaultControlMode);
+    setTimeout(detectDefaultControlMode, 50);
 
     // --- ИНИЦИАЛИЗАЦИЯ ---
     function startCountdown() {
