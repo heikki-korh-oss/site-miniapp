@@ -1357,6 +1357,8 @@
                 // Адаптивный размер головки ноты под ширину шага
                 const headRx = Math.max(7, Math.min(14, spacing * 0.28));
                 const headRy = Math.max(5, Math.min(10, spacing * 0.20));
+                const stemXOffset = headRx * 0.92;
+                const stemHeight = Math.max(30, Math.floor(lineSpacing * 3.2));
 
                 ctx.beginPath();
                 ctx.ellipse(note.x, y, headRx, headRy, -0.2, 0, 2 * Math.PI);
@@ -1382,13 +1384,15 @@
                 
                 ctx.beginPath();
                 if (stemDir === 'up') { 
-                    ctx.moveTo(note.x + 12, y);
-                    stemEndY = y - 45;
-                    ctx.lineTo(note.x + 12, stemEndY);
+                    const sx = note.x + stemXOffset;
+                    ctx.moveTo(sx, y + (headRy * 0.4));
+                    stemEndY = y - stemHeight;
+                    ctx.lineTo(sx, stemEndY);
                 } else { 
-                    ctx.moveTo(note.x - 12, y);
-                    stemEndY = y + 45;
-                    ctx.lineTo(note.x - 12, stemEndY);
+                    const sx = note.x - stemXOffset;
+                    ctx.moveTo(sx, y - (headRy * 0.4));
+                    stemEndY = y + stemHeight;
+                    ctx.lineTo(sx, stemEndY);
                 }
                 ctx.stroke();
                 
@@ -1396,13 +1400,13 @@
                     ctx.fillStyle = ctx.strokeStyle;
                     ctx.beginPath();
                     if (stemDir === 'up') {
-                        const sx = note.x + 12;
+                        const sx = note.x + stemXOffset;
                         const sy = stemEndY;
                         ctx.moveTo(sx, sy);
                         ctx.bezierCurveTo(sx + 10, sy + 6, sx + 12, sy + 18, sx + 7, sy + 25);
                         ctx.bezierCurveTo(sx + 8, sy + 16, sx + 6, sy + 8, sx, sy + 10);
                     } else {
-                        const sx = note.x - 12;
+                        const sx = note.x - stemXOffset;
                         const sy = stemEndY;
                         ctx.moveTo(sx, sy);
                         ctx.bezierCurveTo(sx + 10, sy - 6, sx + 12, sy - 18, sx + 7, sy - 25);
@@ -1423,9 +1427,9 @@
                     }
                 }
 
-                // Рисуем плашку с русским названием ноты при угадывании (с адаптивным поднимом)
+                // Рисуем плашку с русским названием ноты при угадывании (с адаптивным подъемом)
                 if (note.state === 'perfect') {
-                    const topBound = (stemDir === 'up') ? (y - 45) : (y - 12);
+                    const topBound = (stemDir === 'up') ? (y - stemHeight) : (y - stemXOffset);
                     drawNoteBadge(note.x, getNoteNameRu(note.midi), topBound);
                 }
             } else {
@@ -1433,6 +1437,11 @@
                 let minY = Infinity, maxY = -Infinity;
                 let stemDir = group[0].stemDir || 'up';
                 let isCycleNext = group[0].cycle > currentCycle;
+
+                const headRx = Math.max(7, Math.min(14, spacing * 0.28));
+                const headRy = Math.max(5, Math.min(10, spacing * 0.20));
+                const stemXOffset = headRx * 0.92;
+                const stemHeight = Math.max(30, Math.floor(lineSpacing * 3.2));
 
                 group.forEach(note => {
                     const staffData = getNoteStaffData(note.midi);
@@ -1448,9 +1457,6 @@
                         else if (note.state === 'miss') ctx.fillStyle = '#fb7185';
                         else ctx.fillStyle = '#ffffff';
                     }
-
-                    const headRx = Math.max(7, Math.min(14, spacing * 0.28));
-                    const headRy = Math.max(5, Math.min(10, spacing * 0.20));
 
                     ctx.beginPath();
                     ctx.ellipse(note.x, y, headRx, headRy, -0.2, 0, 2 * Math.PI);
@@ -1485,11 +1491,13 @@
                 ctx.lineWidth = 2;
                 ctx.beginPath();
                 if (stemDir === 'up') {
-                    ctx.moveTo(group[0].x + 12, maxY);
-                    ctx.lineTo(group[0].x + 12, minY - 45);
+                    const sx = group[0].x + stemXOffset;
+                    ctx.moveTo(sx, maxY + (headRy * 0.4));
+                    ctx.lineTo(sx, minY - stemHeight);
                 } else {
-                    ctx.moveTo(group[0].x - 12, minY);
-                    ctx.lineTo(group[0].x - 12, maxY + 45);
+                    const sx = group[0].x - stemXOffset;
+                    ctx.moveTo(sx, minY - (headRy * 0.4));
+                    ctx.lineTo(sx, maxY + stemHeight);
                 }
                 ctx.stroke();
 
@@ -1497,7 +1505,7 @@
                 const perfectNotes = group.filter(n => n.state === 'perfect');
                 if (perfectNotes.length > 0) {
                     const chordLabel = perfectNotes.map(n => getNoteNameRu(n.midi)).join(' ');
-                    const topBound = (stemDir === 'up') ? (minY - 45) : (minY - 12);
+                    const topBound = (stemDir === 'up') ? (minY - stemHeight) : (minY - stemXOffset);
                     drawNoteBadge(group[0].x, chordLabel, topBound);
                 }
             }
@@ -1570,22 +1578,30 @@
                     ctx.restore();
                 }
 
+                // Адаптивные размеры для эффектов промаха/попадания
+                const headRx = Math.max(7, Math.min(14, lineSpacing * 0.7));
+                const headRy = Math.max(5, Math.min(10, lineSpacing * 0.5));
+                const stemXOffset = headRx * 0.92;
+                const stemHeight = Math.max(30, Math.floor(lineSpacing * 3.2));
+
                 // Головка ноты
                 ctx.beginPath();
-                ctx.ellipse(fx.x, y, 14, 10, -0.2, 0, 2 * Math.PI);
+                ctx.ellipse(fx.x, y, headRx, headRy, -0.2, 0, 2 * Math.PI);
                 ctx.fill();
 
                 // Штиль
                 let stemEndY;
                 ctx.beginPath();
                 if (stemDir === 'up') {
-                    ctx.moveTo(fx.x + 12, y);
-                    stemEndY = y - 45;
-                    ctx.lineTo(fx.x + 12, stemEndY);
+                    const sx = fx.x + stemXOffset;
+                    ctx.moveTo(sx, y + (headRy * 0.4));
+                    stemEndY = y - stemHeight;
+                    ctx.lineTo(sx, stemEndY);
                 } else {
-                    ctx.moveTo(fx.x - 12, y);
-                    stemEndY = y + 45;
-                    ctx.lineTo(fx.x - 12, stemEndY);
+                    const sx = fx.x - stemXOffset;
+                    ctx.moveTo(sx, y - (headRy * 0.4));
+                    stemEndY = y + stemHeight;
+                    ctx.lineTo(sx, stemEndY);
                 }
                 ctx.stroke();
 
