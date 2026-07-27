@@ -457,12 +457,79 @@
     let topY = 0;
     let staffCenterY = 0;
 
+    // Полный маппинг всех 12 полутонов октавы (включая диезы ♯ для черных клавиш)
     const trebleMap = {
-        95: -7, 93: -6.5, 91: -6, 89: -5.5, 88: -5, 86: -4.5, 84: -4, // Oct 6
-        83: -3.5, 81: -3, 79: -2.5, 77: -2, 76: -1.5, 74: -1, 72: -0.5, // Oct 5
-        71: 0, 69: 0.5, 67: 1, 65: 1.5, 64: 2, 62: 2.5, 60: 3, // Oct 4
-        59: 3.5, 57: 4, 55: 4.5, 53: 5, 52: 5.5, 50: 6, 48: 6.5 // Oct 3
+        // Октава 3 (C3..B3)
+        48: { offset: 6.5, acc: null },  // До (C3)
+        49: { offset: 6.5, acc: '♯' },  // До# (C#3)
+        50: { offset: 6.0, acc: null },  // Ре (D3)
+        51: { offset: 6.0, acc: '♯' },  // Ре# (D#3)
+        52: { offset: 5.5, acc: null },  // Ми (E3)
+        53: { offset: 5.0, acc: null },  // Фа (F3)
+        54: { offset: 5.0, acc: '♯' },  // Фа# (F#3)
+        55: { offset: 4.5, acc: null },  // Соль (G3)
+        56: { offset: 4.5, acc: '♯' },  // Соль# (G#3)
+        57: { offset: 4.0, acc: null },  // Ля (A3)
+        58: { offset: 4.0, acc: '♯' },  // Ля# (A#3)
+        59: { offset: 3.5, acc: null },  // Си (B3)
+
+        // Октава 4 (C4..B4) - Первая октава
+        60: { offset: 3.0, acc: null },  // До (C4)
+        61: { offset: 3.0, acc: '♯' },  // До# (C#4)
+        62: { offset: 2.5, acc: null },  // Ре (D4)
+        63: { offset: 2.5, acc: '♯' },  // Ре# (D#4)
+        64: { offset: 2.0, acc: null },  // Ми (E4)
+        65: { offset: 1.5, acc: null },  // Фа (F4)
+        66: { offset: 1.5, acc: '♯' },  // Фа# (F#4)
+        67: { offset: 1.0, acc: null },  // Соль (G4)
+        68: { offset: 1.0, acc: '♯' },  // Соль# (G#4)
+        69: { offset: 0.5, acc: null },  // Ля (A4)
+        70: { offset: 0.5, acc: '♯' },  // Ля# (A#4)
+        71: { offset: 0.0, acc: null },  // Си (B4)
+
+        // Октава 5 (C5..B5) - Вторая октава
+        72: { offset: -0.5, acc: null }, // До (C5)
+        73: { offset: -0.5, acc: '♯' }, // До# (C#5)
+        74: { offset: -1.0, acc: null }, // Ре (D5)
+        75: { offset: -1.0, acc: '♯' }, // Ре# (D#5)
+        76: { offset: -1.5, acc: null }, // Ми (E5)
+        77: { offset: -2.0, acc: null }, // Фа (F5)
+        78: { offset: -2.0, acc: '♯' }, // Фа# (F#5)
+        79: { offset: -2.5, acc: null }, // Соль (G5)
+        80: { offset: -2.5, acc: '♯' }, // Соль# (G#5)
+        81: { offset: -3.0, acc: null }, // Ля (A5)
+        82: { offset: -3.0, acc: '♯' }, // Ля# (A#5)
+        83: { offset: -3.5, acc: null }, // Си (B5)
+
+        // Октава 6 (C6..B6) - Третья октава
+        84: { offset: -4.0, acc: null }, // До (C6)
+        85: { offset: -4.0, acc: '♯' }, // До# (C#6)
+        86: { offset: -4.5, acc: null }, // Ре (D6)
+        87: { offset: -4.5, acc: '♯' }, // Ре# (D#6)
+        88: { offset: -5.0, acc: null }, // Ми (E6)
+        89: { offset: -5.5, acc: null }, // Фа (F6)
+        90: { offset: -5.5, acc: '♯' }, // Фа# (F#6)
+        91: { offset: -6.0, acc: null }, // Соль (G6)
+        92: { offset: -6.0, acc: '♯' }, // Соль# (G#6)
+        93: { offset: -6.5, acc: null }, // Ля (A6)
+        94: { offset: -6.5, acc: '♯' }, // Ля# (A#6)
+        95: { offset: -7.0, acc: null }  // Си (B6)
     };
+
+    function getNoteStaffData(midi) {
+        if (trebleMap[midi]) return trebleMap[midi];
+        const baseOctave = Math.floor(midi / 12) - 1;
+        const rel = midi % 12;
+        const isSharp = [1, 3, 6, 8, 10].includes(rel);
+        const whiteDegreeMap = [0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 5, 6];
+        const degree = whiteDegreeMap[rel];
+        const offset = 3.0 - (baseOctave - 4) * 3.5 - (degree * 0.5);
+        return { offset: offset, acc: isSharp ? '♯' : null };
+    }
+
+    function getStaffOffset(midi) {
+        return getNoteStaffData(midi).offset;
+    }
 
     const noteNamesRu = ['До', 'До♯', 'Ре', 'Ре♯', 'Ми', 'Фа', 'Фа♯', 'Соль', 'Соль♯', 'Ля', 'Ля♯', 'Си'];
     function getNoteNameRu(midi) {
@@ -474,7 +541,7 @@
         2: [60, 62, 64, 65, 67, 69, 71, 72],
         3: [55, 57, 59, 60, 62, 64, 65, 67, 69, 71, 72],
         4: [55, 57, 59, 60, 62, 64, 65, 67, 69, 71, 72, 74, 76, 77, 79],
-        5: Object.keys(trebleMap).map(Number).filter(m => !isBlackKey(m))
+        5: Object.keys(trebleMap).map(Number)
     };
     
     // --- ГАРМОНИЧЕСКИЕ ИНТЕРВАЛЫ И АККОРДЫВ ТОНАЛЬНОСТИ ДО-МАЖОР (C MAJOR) ---
@@ -1046,7 +1113,7 @@
                 }
             }
 
-            const avgOffset = chordMidis.reduce((sum, m) => sum + trebleMap[m], 0) / chordMidis.length;
+            const avgOffset = chordMidis.reduce((sum, m) => sum + getStaffOffset(m), 0) / chordMidis.length;
             const stemDir = (avgOffset > 0) ? 'up' : 'down';
             
             chordMidis.forEach(midiVal => {
@@ -1171,7 +1238,8 @@
             
             if (group.length === 1) {
                 const note = group[0];
-                const staffOffset = trebleMap[note.midi];
+                const staffData = getNoteStaffData(note.midi);
+                const staffOffset = staffData.offset;
                 const y = staffCenterY + (staffOffset * lineSpacing * 2);
                 
                 if (note.cycle > currentCycle) {
@@ -1189,6 +1257,18 @@
                 ctx.beginPath();
                 ctx.ellipse(note.x, y, headRx, headRy, -0.2, 0, 2 * Math.PI);
                 ctx.fill();
+
+                // Отрисовка знака диеза ♯ перед головкой ноты
+                if (staffData.acc) {
+                    ctx.save();
+                    ctx.fillStyle = ctx.fillStyle;
+                    const accSize = Math.max(12, Math.floor(lineSpacing * 1.5));
+                    ctx.font = `bold ${accSize}px serif`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(staffData.acc, note.x - headRx - 11, y - 1);
+                    ctx.restore();
+                }
                 
                 ctx.strokeStyle = ctx.fillStyle;
                 ctx.lineWidth = 2;
@@ -1251,7 +1331,8 @@
                 let isCycleNext = group[0].cycle > currentCycle;
 
                 group.forEach(note => {
-                    const staffOffset = trebleMap[note.midi];
+                    const staffData = getNoteStaffData(note.midi);
+                    const staffOffset = staffData.offset;
                     const y = staffCenterY + (staffOffset * lineSpacing * 2);
                     minY = Math.min(minY, y);
                     maxY = Math.max(maxY, y);
@@ -1270,6 +1351,18 @@
                     ctx.beginPath();
                     ctx.ellipse(note.x, y, headRx, headRy, -0.2, 0, 2 * Math.PI);
                     ctx.fill();
+
+                    // Отрисовка знака диеза ♯ для ноты в созвучии
+                    if (staffData.acc) {
+                        ctx.save();
+                        ctx.fillStyle = ctx.fillStyle;
+                        const accSize = Math.max(12, Math.floor(lineSpacing * 1.5));
+                        ctx.font = `bold ${accSize}px serif`;
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(staffData.acc, note.x - headRx - 11, y - 1);
+                        ctx.restore();
+                    }
 
                     if (staffOffset >= 3) {
                         for (let j = 3; j <= Math.floor(staffOffset); j++) {
@@ -1351,7 +1444,8 @@
                     continue;
                 }
                 const alpha = Math.max(0, 1.0 - progress * 0.8);
-                const staffOffset = trebleMap[fx.midi] !== undefined ? trebleMap[fx.midi] : (60 - fx.midi) * 0.5;
+                const staffData = getNoteStaffData(fx.midi);
+                const staffOffset = staffData.offset;
                 const y = staffCenterY + (staffOffset * lineSpacing * 2);
                 const stemDir = (staffOffset > 0) ? 'up' : 'down';
 
@@ -1360,6 +1454,17 @@
                 ctx.fillStyle = `rgba(251, 113, 133, ${alpha})`;
                 ctx.strokeStyle = `rgba(251, 113, 133, ${alpha})`;
                 ctx.lineWidth = 2;
+
+                // Отрисовка знака диеза ♯ перед ошибочной нотой
+                if (staffData.acc) {
+                    ctx.save();
+                    const accSize = Math.max(12, Math.floor(lineSpacing * 1.5));
+                    ctx.font = `bold ${accSize}px serif`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(staffData.acc, fx.x - 22, y - 1);
+                    ctx.restore();
+                }
 
                 // Головка ноты
                 ctx.beginPath();
