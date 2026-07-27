@@ -1218,10 +1218,11 @@
         // Вторая линейка снизу (линейка G4 / Соль первой октавы)
         const gLineY = staffCenterY + (1 * lineSpacing * 2);
         
-        // Академический линейный масштаб (пропорционально шагу линеек стана)
-        const scale = (lineSpacing * 2) / 16.5; 
+        // Академический линейный масштаб (высота ключа = 7.5 интервалов между линейками)
+        const scale = (lineSpacing * 2) / 19; 
         
-        ctx.translate(50, gLineY);
+        // Центр спирали Bravura находится в (0, -14.5). Поправка +14.5*scale сажает центр спирали СТРОГО на 2-ю линейку G4!
+        ctx.translate(52, gLineY + (14.5 * scale));
         ctx.scale(scale, scale);
         
         ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
