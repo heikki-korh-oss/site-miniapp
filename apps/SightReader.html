@@ -1571,6 +1571,13 @@
                 ctx.strokeStyle = `rgba(251, 113, 133, ${alpha})`;
                 ctx.lineWidth = 2;
 
+                // Адаптивные размеры для эффектов промаха/попадания точно такие же как у основных нот
+                const headRx = Math.max(7, Math.min(14, spacing * 0.28));
+                const headRy = Math.max(5, Math.min(10, spacing * 0.20));
+                // Штиль лежит строго внутри радиуса головки ноты, чтобы не было ступеньки
+                const stemXOffset = Math.max(3, headRx - 1.5);
+                const stemHeight = Math.max(30, Math.floor(lineSpacing * 3.2));
+
                 // Отрисовка знака диеза ♯ перед ошибочной нотой
                 if (staffData.acc) {
                     ctx.save();
@@ -1578,16 +1585,9 @@
                     ctx.font = `bold ${accSize}px serif`;
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    ctx.fillText(staffData.acc, fx.x - 22, y - 1);
+                    ctx.fillText(staffData.acc, fx.x - headRx - 11, y - 1);
                     ctx.restore();
                 }
-
-                // Адаптивные размеры для эффектов промаха/попадания
-                const headRx = Math.max(7, Math.min(14, lineSpacing * 0.7));
-                const headRy = Math.max(5, Math.min(10, lineSpacing * 0.5));
-                // Штиль лежит строго внутри радиуса головки ноты, чтобы не было ступеньки
-                const stemXOffset = Math.max(3, headRx - 1.5);
-                const stemHeight = Math.max(30, Math.floor(lineSpacing * 3.2));
 
                 // Головка ноты
                 ctx.beginPath();
