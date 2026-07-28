@@ -555,7 +555,7 @@ function Invoke-JsonTests {
     foreach ($item in $itemsToTest) {
         $domain = $item.Domain -replace '^https?://', '' -replace '/.*$', '' -replace '^\*\.', ''
         if (-not $domain) { continue }
-        Test-Endpoint -Name $item.Name -Url "https://$domain/" -PadTo 32
+        Test-Endpoint -Name $item.Name -Url "https://$domain/" -PadTo 32 -Browser
     }
 
     Write-Host "`n✅ Проверка списка завершена." -ForegroundColor Green
